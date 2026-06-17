@@ -1,26 +1,218 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * PossAbilities Onboarding — Design System
+ * Derived from the Stitch DESIGN.md "Gamified Journey" system and the
+ * PossAbilities Brand Manual 1.1 (Purple / Pink / Blue-Green, Avenir → Montserrat).
+ */
+
+@theme {
+  /* Brand-anchored Material palette */
+  --color-background: #fff8f8;
+  --color-background-soft: #f8f9fa;
+  --color-surface: #fff8f8;
+  --color-surface-dim: #e1d8d9;
+  --color-surface-bright: #fff8f8;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #fbf1f2;
+  --color-surface-container: #f5eced;
+  --color-surface-container-high: #efe6e7;
+  --color-surface-container-highest: #e9e0e1;
+
+  --color-on-surface: #1e1b1c;
+  --color-on-surface-variant: #4e434e;
+  --color-on-background: #1e1b1c;
+  --color-inverse-surface: #342f30;
+  --color-inverse-on-surface: #f8efef;
+  --color-outline: #80737f;
+  --color-outline-variant: #d1c2cf;
+  --color-surface-tint: #844594;
+
+  /* Purple — primary / structural */
+  --color-primary: #290036;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #48065a;
+  --color-on-primary-container: #bb77ca;
+  --color-inverse-primary: #f2afff;
+  --color-primary-fixed: #fcd7ff;
+  --color-primary-fixed-dim: #f2afff;
+  --color-on-primary-fixed: #340043;
+  --color-on-primary-fixed-variant: #6a2c7a;
+
+  /* Pink — secondary / action */
+  --color-secondary: #b30069;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #e00085;
+  --color-on-secondary-container: #fffbff;
+  --color-secondary-fixed: #ffd9e4;
+  --color-secondary-fixed-dim: #ffb0cc;
+  --color-on-secondary-fixed: #3e0021;
+  --color-on-secondary-fixed-variant: #8d0051;
+
+  /* Blue/Green — tertiary / progress + path */
+  --color-tertiary: #001819;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #002f2f;
+  --color-on-tertiary-container: #319f9f;
+  --color-tertiary-fixed: #8ef3f3;
+  --color-tertiary-fixed-dim: #71d6d6;
+  --color-on-tertiary-fixed: #002020;
+  --color-on-tertiary-fixed-variant: #004f50;
+  --color-teal-accent: #5bc3c3;
+
+  /* Brand manual exact values + status */
+  --color-brand-pink: #ec008c;
+  --color-brand-purple: #48065a;
+  --color-brand-teal: #66cccc;
+  --color-deep-navy: #1a1645;
+  --color-success-green: #2ecc71;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* Typography */
+  --font-display: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
+  --font-sans: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
+
+  /* Radii — friendly, "squishy" */
+  --radius-sm: 0.25rem;
+  --radius: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* Layout rhythm */
+  --spacing-gutter: 24px;
+  --container-max: 1200px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Material Symbols defaults */
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  user-select: none;
+}
+.material-symbols-outlined.fill {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/* ── Gamified Journey components ─────────────────────────────── */
+
+/* Tinted, floating card shadow */
+.journey-card-shadow {
+  box-shadow: 0 4px 0 0 rgba(41, 0, 54, 0.1);
+}
+.journey-card-hover {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.journey-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 0 0 rgba(41, 0, 54, 0.15);
+}
+
+/* 3D "squishy" pink button — thick bottom border that presses in */
+.btn-3d {
+  box-shadow: 0 3px 0 0 var(--color-on-secondary-fixed-variant);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn-3d:active {
+  box-shadow: 0 0 0 0 var(--color-on-secondary-fixed-variant);
+  transform: translateY(3px);
+}
+.btn-3d-purple {
+  box-shadow: 0 3px 0 0 #1a0022;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn-3d-purple:active {
+  box-shadow: 0 0 0 0 #1a0022;
+  transform: translateY(3px);
+}
+
+/* Frosted panel for "current mission" / achievement overlays */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+}
+
+/* The Path — vertical connector that fills as you progress */
+.path-line {
+  background: var(--color-teal-accent);
+}
+.path-line-gradient {
+  background: linear-gradient(
+    to bottom,
+    var(--color-teal-accent) 0%,
+    var(--color-teal-accent) 40%,
+    var(--color-secondary) 40%,
+    var(--color-secondary) 100%
+  );
+}
+
+/* Gradients for "Level Up" states */
+.gradient-purple-pink {
+  background-image: linear-gradient(135deg, var(--color-primary-container), var(--color-secondary-container));
+}
+.gradient-teal-pink {
+  background-image: linear-gradient(135deg, var(--color-teal-accent), var(--color-secondary));
+}
+.gradient-progress {
+  background-image: linear-gradient(90deg, var(--color-teal-accent), var(--color-secondary));
+}
+
+/* Badge unlock pulse */
+@keyframes badge-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(236, 0, 140, 0.5); }
+  70% { transform: scale(1.04); box-shadow: 0 0 0 14px rgba(236, 0, 140, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(236, 0, 140, 0); }
+}
+.badge-pulse {
+  animation: badge-pulse 1.8s ease-out infinite;
+}
+
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.float-in {
+  animation: float-in 0.4s ease-out both;
+}
+
+/* Focus ring for inputs — blue/green per design system */
+.field-focus:focus {
+  outline: none;
+  border-color: var(--color-teal-accent);
+  box-shadow: 0 0 0 3px rgba(91, 195, 195, 0.25);
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(420px) rotate(720deg); opacity: 0; }
+}
+
+/* Hide scrollbar where needed for horizontal rails */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Print: show only the certificate when the user saves/prints as PDF */
+@media print {
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    box-shadow: none !important;
+  }
+  .no-print { display: none !important; }
 }

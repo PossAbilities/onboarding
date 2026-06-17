@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PossAbilities — New Starter Induction Journey
 
-## Getting Started
+A gamified onboarding website for PossAbilities CIC new starters. New employees
+are invited by an admin, sign in, and progress through a "mission path" of
+modules — a welcome video, meeting the directors, culture & values (with a
+mini-game), benefits, the BIG Idea innovation portal, Very Important Pets &
+wellbeing, locations, and a downloadable completion certificate — earning XP and
+badges along the way. Admins invite starters, track progress, edit content, and
+view analytics.
 
-First, run the development server:
+Built with **Next.js 16** (App Router) · **Tailwind CSS v4** · **Supabase**
+(Auth + Postgres + Storage) · deploys to **Netlify**. Brand and visual system
+follow the **PossAbilities Brand Manual 1.1** and the Stitch "Gamified Journey"
+design (`DESIGN.md`): purple / pink / blue-green, Montserrat, "squishy" 3D
+buttons, and a progress-path motif.
+
+> **Live the life you choose.**
+
+---
+
+## ✨ Two modes
+
+The app runs out-of-the-box with **no backend** so you can click through
+everything immediately:
+
+| | Demo mode (default) | Connected mode |
+|---|---|---|
+| Trigger | No Supabase env vars | Supabase env vars set |
+| Login | One-click "New Starter" / "Admin" buttons | Real email + password |
+| Data | Seeded, in-memory (resets on restart) | Persisted in Postgres |
+| Invites | Added to the in-memory list | Emailed via Supabase Auth |
+| Video | Sample CDN clips | Your uploads (Supabase Storage) |
+
+Everything (games, certificate, content editor, invites, analytics) works in
+demo mode; it simply doesn't persist between server restarts.
+
+---
+
+## 🚀 Quick start (local)
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# open http://localhost:3000  →  click "Enter as a New Starter" or "Enter as an Admin"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+That's it for the demo. To wire up the real backend, see below.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🔌 Connect Supabase (real auth, persisted data, invites, video)
 
-## Learn More
+1. **Create a project** at [supabase.com](https://supabase.com) (free tier is fine).
+2. **Run the SQL.** In the Supabase dashboard → **SQL Editor → New query**, paste
+   and run, in order:
+   - `supabase/schema.sql` (tables, row-level security, triggers)
+   - `supabase/seed.sql` (the same content as the demo)
+3. **Add env vars.** Copy `.env.example` to `.env.local` and fill in (from
+   Supabase → **Project Settings → API**):
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   SUPABASE_SERVICE_ROLE_KEY=...        # server-only, used for admin invites
+   NEXT_PUBLIC_SITE_URL=http://localhost:3000
+   ```
+4. **Create your admin user.** Either sign up through the app, or add a user in
+   Supabase → **Authentication → Users**. Then make them an admin:
+   ```sql
+   update public.profiles set is_admin = true where email = 'you@possabilities.org.uk';
+   ```
+5. **Restart** `npm run dev`. The login screen now asks for email + password, and
+   the admin "Invite a starter" / "Bulk import" buttons send real invite emails.
 
-To learn more about Next.js, take a look at the following resources:
+### Invite emails & redirect
+Invites use Supabase's `inviteUserByEmail`, redirecting to `/accept-invite`
+where the new starter sets a password. In Supabase → **Authentication → URL
+Configuration**, add your site URL (and `…/auth/confirm`) to the allowed redirect
+URLs.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Native video uploads
+Create a **Storage bucket** (e.g. `induction-media`, public), upload your
+welcome / culture videos, and paste the public URL into a module via
+**Admin → Journey Content → Hero media URL**. The site plays them natively with
+the built-in HTML5 player (no third-party embeds).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🌐 Deploy to Netlify
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This repo includes `netlify.toml` with the official Next.js runtime.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push this repo to GitHub (see below).
+2. In Netlify → **Add new site → Import from GitHub**, pick the repo.
+3. Build settings are auto-detected from `netlify.toml`
+   (`npm run build`, plugin `@netlify/plugin-nextjs`).
+4. **Site settings → Environment variables** — add the four vars from step 3
+   above, setting `NEXT_PUBLIC_SITE_URL` to your Netlify URL.
+5. Deploy. (Without the Supabase vars it deploys in demo mode — handy for a
+   quick shareable preview.)
+
+---
+
+## 🗂 Project structure
+
+```
+src/
+  app/
+    (employee)/            # authed employee area (sidebar + journey shell)
+      journey/             # the gamified mission path (home)
+      modules/[slug]/      # one route → renders per module "kind"
+      badges/ leaderboard/ milestones/ knowledge-hub/
+    admin/                 # admin console (requireAdmin)
+      page.tsx  starters/  content/  analytics/  settings/
+    actions/               # server actions (auth, journey, admin)
+    login/  accept-invite/  auth/confirm/
+  components/
+    ui/                    # Button, Card, Chip, ProgressBar, Avatar, VideoPlayer…
+    layout/                # EmployeeShell, AdminShell, nav, user menu
+    modules/               # ModuleScaffold + per-kind views + complete/egg
+    games/                 # ValuesGame, IdeaPortal
+  lib/
+    data.ts                # data layer (Supabase OR demo fallback)
+    seed.ts                # all demo/seed content (edit copy & media here)
+    journey.ts             # unlock + progress logic
+    auth.ts  config.ts  demo-store.ts  supabase/
+  proxy.ts                 # Next 16 "proxy" (middleware) — route protection
+supabase/
+  schema.sql  seed.sql     # one-shot backend setup
+```
+
+## ✏️ Editing content
+- **Quickest:** edit `src/lib/seed.ts` (directors, benefits, pets, locations,
+  badges, module copy, sample videos) — applies to both modes.
+- **In-app:** **Admin → Journey Content** edits module title/description/time/
+  XP/required/hero-media live (persists in connected mode; in-memory in demo).
+
+## 🧩 Notes & roadmap
+- Demo mode stores writes in server memory — great for previews, not durable.
+  Connect Supabase for real persistence.
+- Module content is served from `seed.ts`; in connected mode, dynamic data
+  (progress, ideas, invites, profiles) is read from Postgres. Reading *module
+  content* from the DB tables is a small documented next step.
+- Adding brand-new modules via the editor is stubbed ("on the roadmap"); the
+  seven mission modules are fully editable.
+
+---
+© PossAbilities CIC — Live The Life You Choose.
