@@ -5,12 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { IdBadge } from "@/components/ui/IdBadge";
+import { ImageCropper } from "./ImageCropper";
 import { clsx } from "@/lib/cn";
 import { uploadMediaAction } from "@/app/actions/media";
 import { saveProfilePhotoAction } from "@/app/actions/journey";
-
-const OUT_W = 600;
-const OUT_H = 750; // 4:5 passport-ish portrait
 
 const CHECKS = [
   "My whole head and shoulders are in shot, with a little space above my head",
@@ -19,37 +17,17 @@ const CHECKS = [
   "It's a recent, professional photo (not a night-out or holiday snap!)",
 ];
 
-/** Centre-crop any source (image/video) to a portrait 4:5 data URL. */
-function cropToPortrait(
-  source: HTMLVideoElement | HTMLImageElement,
-  sw: number,
-  sh: number,
-  mirror: boolean,
-): string {
-  const target = OUT_W / OUT_H;
-  const srcRatio = sw / sh;
-  let cropW: number, cropH: number, sx: number, sy: number;
-  if (srcRatio > target) {
-    cropH = sh;
-    cropW = sh * target;
-    sx = (sw - cropW) / 2;
-    sy = 0;
-  } else {
-    cropW = sw;
-    cropH = sw / target;
-    sx = 0;
-    sy = (sh - cropH) / 2;
-  }
+/** Capture the full current video frame (un-mirrored) as a data URL. */
+function captureFrame(video: HTMLVideoElement): string {
   const canvas = document.createElement("canvas");
-  canvas.width = OUT_W;
-  canvas.height = OUT_H;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d")!;
-  if (mirror) {
-    ctx.translate(OUT_W, 0);
-    ctx.scale(-1, 1);
-  }
-  ctx.drawImage(source, sx, sy, cropW, cropH, 0, 0, OUT_W, OUT_H);
-  return canvas.toDataURL("image/jpeg", 0.9);
+  // Un-mirror so the saved image matches reality (preview is mirrored for comfort).
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0);
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 
 function dataUrlToFile(dataUrl: string, name: string): File {
@@ -81,8 +59,11 @@ export function PhotoCapture({
   const streamRef = useRef<MediaStream | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [view, setView] = useState<"intro" | "camera" | "review">("intro");
+  const [view, setView] = useState<"intro" | "camera" | "adjust" | "review">(
+    "intro",
+  );
   const [photo, setPhoto] = useState<string | null>(currentPhoto);
+  const [source, setSource] = useState<string | null>(null);
   const [checks, setChecks] = useState<boolean[]>([false, false, false, false]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -126,10 +107,9 @@ export function PhotoCapture({
   const capture = () => {
     const v = videoRef.current;
     if (!v) return;
-    const data = cropToPortrait(v, v.videoWidth, v.videoHeight, true);
-    setPhoto(data);
+    setSource(captureFrame(v));
     stopCamera();
-    setView("review");
+    setView("adjust");
   };
 
   const onFile = (file: File) => {
@@ -138,14 +118,13 @@ export function PhotoCapture({
       setError("Please choose an image file.");
       return;
     }
-    const img = new Image();
-    img.onload = () => {
-      const data = cropToPortrait(img, img.naturalWidth, img.naturalHeight, false);
-      setPhoto(data);
-      setView("review");
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSource(String(reader.result));
+      setView("adjust");
     };
-    img.onerror = () => setError("That image couldn't be loaded.");
-    img.src = URL.createObjectURL(file);
+    reader.onerror = () => setError("That image couldn't be loaded.");
+    reader.readAsDataURL(file);
   };
 
   const allChecked = checks.every(Boolean);
@@ -302,6 +281,18 @@ export function PhotoCapture({
             </button>
           </div>
         </div>
+      )}
+
+      {/* ADJUST (crop / position) */}
+      {view === "adjust" && source && (
+        <ImageCropper
+          src={source}
+          onCancel={() => setView("intro")}
+          onCropped={(data) => {
+            setPhoto(data);
+            setView("review");
+          }}
+        />
       )}
 
       {/* REVIEW */}

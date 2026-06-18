@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { uploadMediaAction } from "@/app/actions/media";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/config";
+import { parseVideo } from "@/lib/video";
 import { clsx } from "@/lib/cn";
 
 const MAX_BYTES = 200 * 1024 * 1024; // 200 MB (direct upload)
@@ -71,6 +72,8 @@ export function MediaUpload({
     }
   };
 
+  const embed = kind === "video" ? parseVideo(value) : { embedUrl: undefined };
+
   const frame =
     shape === "avatar"
       ? "h-24 w-24 rounded-full"
@@ -93,7 +96,16 @@ export function MediaUpload({
         >
           {value ? (
             kind === "video" ? (
-              <video src={value} className="h-full w-full object-cover" muted />
+              embed.embedUrl ? (
+                <iframe
+                  src={embed.embedUrl}
+                  title="Video preview"
+                  className="h-full w-full"
+                  allow="fullscreen"
+                />
+              ) : (
+                <video src={value} className="h-full w-full object-cover" muted />
+              )
             ) : (
               <img src={value} alt="" className="h-full w-full object-cover" />
             )
@@ -138,7 +150,11 @@ export function MediaUpload({
               onClick={() => setShowUrl((s) => !s)}
               className="text-secondary hover:underline"
             >
-              {showUrl ? "Hide URL" : "or paste a URL"}
+              {showUrl
+                ? "Hide URL"
+                : kind === "video"
+                  ? "or paste a Vimeo / video link"
+                  : "or paste a URL"}
             </button>
             {value && (
               <button
@@ -154,8 +170,10 @@ export function MediaUpload({
             <input
               value={value ?? ""}
               onChange={(e) => onChange(e.target.value || null)}
-              placeholder="https://…"
-              className="field-focus w-64 rounded-md border-2 border-outline-variant bg-surface-container-lowest px-3 py-1.5 text-sm"
+              placeholder={
+                kind === "video" ? "https://vimeo.com/… or …/video.mp4" : "https://…"
+              }
+              className="field-focus w-72 rounded-md border-2 border-outline-variant bg-surface-container-lowest px-3 py-1.5 text-sm"
             />
           )}
           {error && (

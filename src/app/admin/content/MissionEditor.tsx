@@ -8,6 +8,7 @@ import { Chip } from "@/components/ui/Chip";
 import { clsx } from "@/lib/cn";
 import { ContentBlockEditor } from "./ContentBlockEditor";
 import { MediaUpload } from "@/components/admin/MediaUpload";
+import { looksLikeVideo } from "@/lib/video";
 import {
   createModuleAction,
   deleteModuleAction,
@@ -33,8 +34,7 @@ const KIND_OPTIONS: { value: ModuleKind; label: string }[] = [
 const clone = (m: Module): Module => JSON.parse(JSON.stringify(m));
 const isDirty = (a: Module, b: Module) =>
   JSON.stringify(a) !== JSON.stringify(b);
-const isVideo = (url: string | null) =>
-  !!url && (/\.(mp4|webm|mov)(\?|$)/i.test(url) || url.startsWith("data:video"));
+const isVideo = (url: string | null) => looksLikeVideo(url);
 
 export function MissionEditor({
   modules: initial,

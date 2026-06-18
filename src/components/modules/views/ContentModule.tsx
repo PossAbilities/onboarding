@@ -1,10 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { ModuleScaffold } from "../ModuleScaffold";
 import { ModuleVideo } from "../ModuleVideo";
+import { looksLikeVideo } from "@/lib/video";
 import type { ModuleViewProps } from "../types";
 
-const isVideo = (url: string) =>
-  /\.(mp4|webm|mov)(\?|$)/i.test(url) || url.startsWith("data:video");
+const isVideo = (url: string) => looksLikeVideo(url);
 
 /**
  * Generic content mission: an optional hero (native video or image) plus the

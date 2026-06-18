@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Icon } from "./Icon";
 import { clsx } from "@/lib/cn";
+import { parseVideo, isEmbedVideo } from "@/lib/video";
 
 /**
  * Native HTML5 video player with a branded play overlay and an `onWatched`
@@ -29,6 +30,27 @@ export function VideoPlayer({
   const play = () => {
     ref.current?.play();
   };
+
+  // Vimeo / YouTube links play through their embed iframe.
+  const parsed = parseVideo(src);
+  if (isEmbedVideo(parsed.kind)) {
+    return (
+      <div
+        className={clsx(
+          "relative aspect-video overflow-hidden rounded-lg bg-black",
+          className,
+        )}
+      >
+        <iframe
+          src={parsed.embedUrl}
+          title={label ?? "Video"}
+          className="h-full w-full"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
 
   return (
     <div
