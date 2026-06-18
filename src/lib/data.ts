@@ -20,45 +20,106 @@ import type {
   Profile,
 } from "./types";
 
-/* ───────────────────────── Static content ─────────────────────────
- * Content (modules, directors, benefits, pets, locations, badges) is served
- * from the seed catalogue. The admin Content Editor edits this catalogue; with
- * Supabase configured these live in tables seeded from supabase/seed.sql.
+/* ───────────────────────── Mission catalogue ──────────────────────
+ * Missions are fully editable via the admin Content Editor. In DEMO MODE they
+ * live in a mutable in-memory working copy (src/lib/demo-store.ts). With
+ * Supabase configured they live in the `modules` table — read and written here.
  */
-export function getModules(): Module[] {
-  const overrides = isSupabaseConfigured ? {} : demoState().moduleOverrides;
-  return [...MODULES]
-    .map((m) => (overrides[m.id] ? { ...m, ...overrides[m.id] } : m))
-    .sort((a, b) => a.order - b.order);
+export async function getModules(): Promise<Module[]> {
+  if (!isSupabaseConfigured) {
+    return [...demoState().modules].sort((a, b) => a.order - b.order);
+  }
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("modules")
+    .select("*")
+    .order("order", { ascending: true });
+  // Fall back to seed if the table is empty (e.g. schema run, seed not yet).
+  if (!data || data.length === 0) {
+    return [...MODULES].sort((a, b) => a.order - b.order);
+  }
+  return data.map(mapModuleRow);
 }
-export function getModuleBySlug(slug: string): Module | undefined {
-  return getModules().find((m) => m.slug === slug);
+export async function getModuleBySlug(slug: string): Promise<Module | undefined> {
+  return (await getModules()).find((m) => m.slug === slug);
 }
-export function getModuleById(id: string): Module | undefined {
-  return getModules().find((m) => m.id === id);
+export async function getModuleById(id: string): Promise<Module | undefined> {
+  return (await getModules()).find((m) => m.id === id);
 }
 
-/** Admin content edit. Demo: in-memory override; Supabase: persists to `modules`. */
-export async function updateModule(
-  id: string,
-  patch: Partial<Pick<Module, "title" | "shortTitle" | "description" | "estMinutes" | "rewardXp" | "required" | "heroMediaUrl">>,
-): Promise<void> {
+/** Save the full module (all fields incl. content blocks). */
+export async function saveModule(mod: Module): Promise<void> {
   if (!isSupabaseConfigured) {
     const state = demoState();
-    state.moduleOverrides[id] = { ...state.moduleOverrides[id], ...patch };
+    const i = state.modules.findIndex((m) => m.id === mod.id);
+    if (i >= 0) state.modules[i] = mod;
+    else state.modules.push(mod);
     return;
   }
   const supabase = await createSupabaseServerClient();
-  const row: Record<string, unknown> = {};
-  if (patch.title !== undefined) row.title = patch.title;
-  if (patch.shortTitle !== undefined) row.short_title = patch.shortTitle;
-  if (patch.description !== undefined) row.description = patch.description;
-  if (patch.estMinutes !== undefined) row.est_minutes = patch.estMinutes;
-  if (patch.rewardXp !== undefined) row.reward_xp = patch.rewardXp;
-  if (patch.required !== undefined) row.required = patch.required;
-  if (patch.heroMediaUrl !== undefined) row.hero_media_url = patch.heroMediaUrl;
-  await supabase.from("modules").update(row).eq("id", id);
+  await supabase.from("modules").upsert(moduleToRow(mod), { onConflict: "id" });
 }
+
+/** Create a new blank mission at the end of the path. Returns the new module. */
+export async function createModule(): Promise<Module> {
+  const all = await getModules();
+  const nextOrder = (all.at(-1)?.order ?? 0) + 1;
+  const id = `m-custom-${Date.now()}`;
+  const mod: Module = {
+    id,
+    slug: `mission-${nextOrder}`,
+    order: nextOrder,
+    level: nextOrder,
+    kind: "content",
+    title: `Mission ${String(nextOrder).padStart(2, "0")}: New Mission`,
+    shortTitle: "New Mission",
+    description: "Describe what this mission covers.",
+    estMinutes: 5,
+    required: false,
+    badgeId: null,
+    rewardXp: 50,
+    heroMediaUrl: null,
+    heroPoster: null,
+    content: [
+      { type: "heading", text: "New section" },
+      { type: "paragraph", text: "Add your content here." },
+    ],
+  };
+  await saveModule(mod);
+  return mod;
+}
+
+export async function deleteModule(id: string): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const state = demoState();
+    state.modules = state.modules.filter((m) => m.id !== id);
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("modules").delete().eq("id", id);
+}
+
+/** Reorder by an ordered list of module ids; re-numbers order + level. */
+export async function reorderModules(orderedIds: string[]): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const state = demoState();
+    orderedIds.forEach((id, i) => {
+      const mod = state.modules.find((m) => m.id === id);
+      if (mod) {
+        mod.order = i + 1;
+        mod.level = i + 1;
+      }
+    });
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await Promise.all(
+    orderedIds.map((id, i) =>
+      supabase.from("modules").update({ order: i + 1, level: i + 1 }).eq("id", id),
+    ),
+  );
+}
+
 export const getDirectors = () =>
   [...DIRECTORS].sort((a, b) => a.order - b.order);
 export const getBenefits = () =>
@@ -88,7 +149,7 @@ async function getProgressRecords(userId: string): Promise<ModuleProgress[]> {
 
 export async function getJourneyState(profile: Profile): Promise<JourneyState> {
   const records = await getProgressRecords(profile.id);
-  const modules = getModules();
+  const modules = await getModules();
   const { progress, percentComplete } = computeJourney(records, modules);
 
   const earnedBadges = isSupabaseConfigured
@@ -123,7 +184,7 @@ export async function completeModule(
   moduleId: string,
   score: number | null = null,
 ): Promise<{ badgeId: string | null; xp: number }> {
-  const mod = getModuleById(moduleId);
+  const mod = await getModuleById(moduleId);
   if (!mod) return { badgeId: null, xp: 0 };
   const now = new Date().toISOString();
 
@@ -421,6 +482,46 @@ export async function bulkInvite(
 
 /* ───────────────────────── Mappers ──────────────────────────────── */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+function mapModuleRow(row: any): Module {
+  return {
+    id: row.id,
+    slug: row.slug,
+    order: row.order,
+    level: row.level,
+    kind: row.kind,
+    title: row.title,
+    shortTitle: row.short_title,
+    description: row.description ?? "",
+    estMinutes: row.est_minutes ?? 5,
+    required: row.required ?? false,
+    badgeId: row.badge_id ?? null,
+    rewardXp: row.reward_xp ?? 0,
+    heroMediaUrl: row.hero_media_url ?? null,
+    heroPoster: row.hero_poster ?? null,
+    content: Array.isArray(row.content) ? row.content : [],
+  };
+}
+
+function moduleToRow(m: Module): Record<string, unknown> {
+  return {
+    id: m.id,
+    slug: m.slug,
+    order: m.order,
+    level: m.level,
+    kind: m.kind,
+    title: m.title,
+    short_title: m.shortTitle,
+    description: m.description,
+    est_minutes: m.estMinutes,
+    required: m.required,
+    badge_id: m.badgeId,
+    reward_xp: m.rewardXp,
+    hero_media_url: m.heroMediaUrl,
+    hero_poster: m.heroPoster,
+    content: m.content,
+  };
+}
+
 function mapIdeaRow(row: any): Idea {
   return {
     id: row.id,

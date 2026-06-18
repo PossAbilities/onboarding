@@ -128,20 +128,29 @@ supabase/
   schema.sql  seed.sql     # one-shot backend setup
 ```
 
-## ✏️ Editing content
-- **Quickest:** edit `src/lib/seed.ts` (directors, benefits, pets, locations,
-  badges, module copy, sample videos) — applies to both modes.
-- **In-app:** **Admin → Journey Content** edits module title/description/time/
-  XP/required/hero-media live (persists in connected mode; in-memory in demo).
+## ✏️ Editing missions (full CMS)
+**Admin → Journey Content** is a complete mission builder:
+- **Reorder** missions (↑/↓), **add** new missions, and **delete** them.
+- Edit every field: title, short title, URL slug, description, **layout type**
+  (welcome video / directors / culture+game / benefits / BIG Idea / pets /
+  locations / rich-content / certificate), **unlockable badge**, required flag,
+  estimated time, reward XP, and **hero media** (paste a `.mp4`/image URL).
+- Write **rich body content block by block** — headings, paragraphs, quotes,
+  checklists and callouts, each reorderable and removable. These render on the
+  mission page via the shared content renderer.
+- Changes publish instantly (in-memory in demo mode; persisted to the `modules`
+  table in connected mode).
+
+Prefer editing in code? `src/lib/seed.ts` holds the starting catalogue
+(missions, directors, benefits, pets, locations, badges) and is the seed for
+both modes.
 
 ## 🧩 Notes & roadmap
 - Demo mode stores writes in server memory — great for previews, not durable.
-  Connect Supabase for real persistence.
-- Module content is served from `seed.ts`; in connected mode, dynamic data
-  (progress, ideas, invites, profiles) is read from Postgres. Reading *module
-  content* from the DB tables is a small documented next step.
-- Adding brand-new modules via the editor is stubbed ("on the roadmap"); the
-  seven mission modules are fully editable.
+  Connect Supabase for real persistence (missions persist to the `modules`
+  table, with `content` stored as JSONB).
+- The directors / benefits / pets / locations *collections* are edited in
+  `seed.ts` today; per-item admin CRUD for those lists is a natural next step.
 
 ---
 © PossAbilities CIC — Live The Life You Choose.

@@ -1,6 +1,7 @@
 import {
   DEMO_STARTERS,
   IDEAS,
+  MODULES,
 } from "./seed";
 import type {
   Idea,
@@ -26,7 +27,9 @@ interface DemoState {
   starters: Profile[];
   easterEggs: string[];
   journeyPoints: number;
-  moduleOverrides: Record<string, Partial<Module>>;
+  // Full mutable working copy of the mission catalogue. The admin editor reads
+  // and writes this directly, so missions are completely customisable in demo.
+  modules: Module[];
 }
 
 function seedState(): DemoState {
@@ -54,7 +57,11 @@ function seedState(): DemoState {
     starters: [...DEMO_STARTERS],
     easterEggs: [],
     journeyPoints: 850,
-    moduleOverrides: {},
+    // Deep clone so edits never mutate the seed constants.
+    modules: MODULES.map((m) => ({
+      ...m,
+      content: m.content.map((b) => ({ ...b, items: b.items ? [...b.items] : undefined })),
+    })),
   };
 }
 

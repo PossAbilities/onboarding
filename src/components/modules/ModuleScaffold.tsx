@@ -4,6 +4,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Chip } from "@/components/ui/Chip";
 import { ButtonLink } from "@/components/ui/Button";
 import { CompleteModuleButton } from "./CompleteModuleButton";
+import { ContentBlocks } from "./ContentBlocks";
 import { getBadges } from "@/lib/data";
 import type { Module } from "@/lib/types";
 
@@ -53,6 +54,12 @@ export function ModuleScaffold({
       </p>
 
       {hero && <div className="mt-6">{hero}</div>}
+
+      {module.content?.length > 0 && (
+        <div className="mt-8">
+          <ContentBlocks blocks={module.content} />
+        </div>
+      )}
 
       <div className="mt-8">{children}</div>
 

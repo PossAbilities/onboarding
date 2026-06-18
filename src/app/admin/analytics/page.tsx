@@ -9,7 +9,7 @@ export default async function AnalyticsPage() {
   const [stats, starters, modules] = await Promise.all([
     getStarterStats(),
     getStarters(),
-    Promise.resolve(getModules()),
+    getModules(),
   ]);
 
   const activeOrDone = starters.filter((s) => s.status !== "invited");

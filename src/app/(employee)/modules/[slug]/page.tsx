@@ -18,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const mod = getModuleBySlug(slug);
+  const mod = await getModuleBySlug(slug);
   return { title: mod?.shortTitle ?? "Module" };
 }
 
@@ -28,7 +28,7 @@ export default async function ModulePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const mod = getModuleBySlug(slug);
+  const mod = await getModuleBySlug(slug);
   if (!mod) notFound();
 
   const profile = await requireProfile();
@@ -36,7 +36,7 @@ export default async function ModulePage({
   const status = statusFor(mod.id, journey.progress);
   if (status === "locked") redirect("/journey");
 
-  const ordered = getModules();
+  const ordered = await getModules();
   const idx = ordered.findIndex((m) => m.id === mod.id);
   const prevSlug = idx > 0 ? ordered[idx - 1].slug : null;
   const nextSlug = idx < ordered.length - 1 ? ordered[idx + 1].slug : null;

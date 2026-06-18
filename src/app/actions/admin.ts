@@ -2,7 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
-import { bulkInvite, inviteStarter, updateModule } from "@/lib/data";
+import {
+  bulkInvite,
+  createModule,
+  deleteModule,
+  inviteStarter,
+  reorderModules,
+  saveModule,
+} from "@/lib/data";
+import type { Module } from "@/lib/types";
 
 export type InviteState =
   | { ok: boolean; message: string }
@@ -30,27 +38,61 @@ export async function inviteStarterAction(
   return res;
 }
 
-export async function updateModuleAction(
-  _prev: InviteState,
-  formData: FormData,
-): Promise<InviteState> {
-  await requireAdmin();
-  const id = String(formData.get("id") ?? "");
-  if (!id) return { ok: false, message: "Missing module id." };
-
-  await updateModule(id, {
-    title: String(formData.get("title") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim(),
-    estMinutes: Number(formData.get("estMinutes") ?? 5) || 5,
-    rewardXp: Number(formData.get("rewardXp") ?? 0) || 0,
-    required: formData.get("required") === "on",
-    heroMediaUrl: String(formData.get("heroMediaUrl") ?? "").trim() || null,
-  });
-
+function revalidateContent() {
   revalidatePath("/admin/content");
   revalidatePath("/journey");
+  revalidatePath("/milestones");
+  revalidatePath("/admin");
   revalidatePath("/modules", "layout");
-  return { ok: true, message: "Module saved. Changes are live on the journey." };
+}
+
+/** Save a full module (all fields incl. content blocks). */
+export async function saveModuleAction(
+  mod: Module,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  if (!mod?.id) return { ok: false, message: "Missing module id." };
+  if (!mod.title?.trim()) return { ok: false, message: "A title is required." };
+  if (!mod.slug?.trim()) return { ok: false, message: "A URL slug is required." };
+
+  // Normalise the slug to be URL-safe.
+  const slug = mod.slug
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  await saveModule({
+    ...mod,
+    slug: slug || mod.id,
+    estMinutes: Number(mod.estMinutes) || 1,
+    rewardXp: Number(mod.rewardXp) || 0,
+    content: Array.isArray(mod.content) ? mod.content : [],
+  });
+  revalidateContent();
+  return { ok: true, message: "Saved. Changes are live on every journey." };
+}
+
+export async function createModuleAction(): Promise<{ module: Module }> {
+  await requireAdmin();
+  const created = await createModule();
+  revalidateContent();
+  return { module: created };
+}
+
+export async function deleteModuleAction(
+  id: string,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  await deleteModule(id);
+  revalidateContent();
+  return { ok: true, message: "Mission deleted." };
+}
+
+export async function reorderModulesAction(orderedIds: string[]): Promise<void> {
+  await requireAdmin();
+  await reorderModules(orderedIds);
+  revalidateContent();
 }
 
 /** Bulk import from pasted CSV: `name,email,role` per line (header optional). */
