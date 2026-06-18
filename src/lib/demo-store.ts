@@ -65,6 +65,8 @@ interface DemoState {
   emailTemplates: EmailTemplate[];
   // Demo employee's uploaded profile photo (overrides the seed avatar).
   employeeAvatarUrl: string | null;
+  // Demo employee's profile metadata (badge details, etc.).
+  employeeMeta: Record<string, unknown>;
   documents: SignDocument[];
   signatures: DocumentSignature[]; // the demo employee's signatures
   integrations: Integration[];
@@ -120,6 +122,7 @@ function seedState(): DemoState {
     employeeAvatarUrl: null,
     documents: SIGN_DOCUMENTS.map((d) => ({ ...d })),
     signatures: [],
+    employeeMeta: {},
     integrations: INTEGRATIONS.map((i) => ({
       ...i,
       headers: i.headers.map((h) => ({ ...h })),

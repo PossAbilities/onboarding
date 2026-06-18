@@ -86,6 +86,11 @@ export function PhotoCapture({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // ID badge details
+  const [nameOnBadge, setNameOnBadge] = useState(name);
+  const [pronouns, setPronouns] = useState("");
+  const [jobTitle, setJobTitle] = useState(role);
+
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -154,7 +159,11 @@ export function PhotoCapture({
       setError(up.error);
       return;
     }
-    const res = await saveProfilePhotoAction(moduleId, up.url);
+    const res = await saveProfilePhotoAction(moduleId, up.url, {
+      nameOnBadge,
+      pronouns,
+      jobTitle,
+    });
     setSaving(false);
     if (res.ok) {
       setSaved(true);
@@ -298,7 +307,12 @@ export function PhotoCapture({
             <div className="overflow-hidden rounded-xl border-2 border-outline-variant/40" style={{ width: 200 }}>
               <img src={photo} alt="Your photo" className="block w-full" style={{ aspectRatio: "4/5", objectFit: "cover" }} />
             </div>
-            <IdBadge name={name} role={role} department={department} photoUrl={photo} />
+            <IdBadge
+              name={nameOnBadge || name}
+              role={[jobTitle || role, pronouns].filter(Boolean).join(" · ")}
+              department={department}
+              photoUrl={photo}
+            />
           </div>
 
           <div>
@@ -321,6 +335,48 @@ export function PhotoCapture({
             ) : (
               <>
                 <h2 className="text-lg font-black text-on-surface">
+                  Your ID badge details
+                </h2>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  Check these are right — they&rsquo;ll be printed on your badge.
+                </p>
+                <div className="mt-3 flex flex-col gap-3">
+                  <label className="block text-sm font-bold text-on-surface">
+                    Name as it should appear on your badge
+                    <input
+                      value={nameOnBadge}
+                      onChange={(e) => setNameOnBadge(e.target.value)}
+                      className="field-focus mt-1 w-full rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+                    />
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block text-sm font-bold text-on-surface">
+                      Pronouns
+                      <select
+                        value={pronouns}
+                        onChange={(e) => setPronouns(e.target.value)}
+                        className="field-focus mt-1 w-full rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+                      >
+                        <option value="">Prefer not to say</option>
+                        <option>She / Her</option>
+                        <option>He / Him</option>
+                        <option>They / Them</option>
+                        <option>She / They</option>
+                        <option>He / They</option>
+                      </select>
+                    </label>
+                    <label className="block text-sm font-bold text-on-surface">
+                      Job title
+                      <input
+                        value={jobTitle}
+                        onChange={(e) => setJobTitle(e.target.value)}
+                        className="field-focus mt-1 w-full rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <h2 className="mt-5 text-lg font-black text-on-surface">
                   Quick check before we save
                 </h2>
                 <div className="mt-3 flex flex-col gap-2">

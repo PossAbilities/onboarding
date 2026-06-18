@@ -11,6 +11,7 @@ import {
   starterEventData,
   submitIdea,
   updateMyAvatar,
+  updateMyProfileMeta,
   voteIdea,
 } from "@/lib/data";
 import { dispatchEvent } from "@/lib/integrations";
@@ -43,11 +44,32 @@ export async function completeModuleAction(moduleId: string, score?: number) {
   return result;
 }
 
-/** Save the user's profile photo and complete the photo module. */
-export async function saveProfilePhotoAction(moduleId: string, url: string) {
+export interface BadgeDetails {
+  nameOnBadge?: string;
+  pronouns?: string;
+  jobTitle?: string;
+}
+
+/** Save the user's ID-badge photo + details and complete the step. */
+export async function saveProfilePhotoAction(
+  moduleId: string,
+  url: string,
+  details: BadgeDetails = {},
+) {
   const profile = await requireProfile();
   if (!url) return { ok: false as const, message: "No photo provided." };
   await updateMyAvatar(profile, url);
+
+  const nameOnBadge = (details.nameOnBadge ?? profile.fullName).trim();
+  const jobTitle = (details.jobTitle ?? profile.roleTag).trim();
+  const pronouns = (details.pronouns ?? "").trim();
+  await updateMyProfileMeta(profile, {
+    name_on_badge: nameOnBadge,
+    pronouns,
+    job_title: jobTitle,
+    photo_url: url,
+  });
+
   const result = await completeModule(profile, moduleId);
   revalidatePath("/journey");
   revalidatePath("/modules", "layout");
@@ -57,6 +79,9 @@ export async function saveProfilePhotoAction(moduleId: string, url: string) {
   const base = await starterEventData(profile);
   await dispatchEvent("photo.submitted", {
     ...base,
+    name_on_badge: nameOnBadge,
+    pronouns,
+    job_title: jobTitle,
     photo_url: url,
     submitted_at: new Date().toISOString(),
   });

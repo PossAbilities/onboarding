@@ -838,6 +838,27 @@ export async function updateMyAvatar(
     .eq("id", profile.id);
 }
 
+/** Merge fields into the signed-in user's profile metadata (e.g. badge details). */
+export async function updateMyProfileMeta(
+  profile: Profile,
+  meta: Record<string, unknown>,
+): Promise<void> {
+  if (!isSupabaseConfigured) {
+    Object.assign(demoState().employeeMeta, meta);
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("metadata")
+    .eq("id", profile.id)
+    .single();
+  await supabase
+    .from("profiles")
+    .update({ metadata: { ...(data?.metadata ?? {}), ...meta } })
+    .eq("id", profile.id);
+}
+
 /** Update a starter's department / manager / role. */
 export async function updateStarter(
   id: string,

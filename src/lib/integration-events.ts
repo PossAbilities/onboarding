@@ -30,11 +30,14 @@ const STARTER_FIELDS: IntegrationField[] = [
 export const INTEGRATION_EVENTS: IntegrationEventDef[] = [
   {
     value: "photo.submitted",
-    label: "Profile photo submitted",
+    label: "ID badge submitted",
     description:
-      "Fires when a starter saves their ID/profile photo. Ideal for creating an ID badge task in your task manager.",
+      "Fires when a starter completes the ID-badge step (photo + details). Ideal for creating an ID badge task in your task manager.",
     fields: [
       ...STARTER_FIELDS,
+      { key: "name_on_badge", label: "Name on badge", sample: "Alex Guru" },
+      { key: "pronouns", label: "Pronouns", sample: "They / Them" },
+      { key: "job_title", label: "Job title", sample: "Support Worker" },
       { key: "photo_url", label: "Photo URL", sample: "https://…/photo.jpg" },
       { key: "submitted_at", label: "Submitted at", sample: "2026-06-18T09:00:00Z" },
     ],
