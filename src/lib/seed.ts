@@ -8,6 +8,7 @@ import type {
   Location,
   Manager,
   Module,
+  Integration,
   Pet,
   Profile,
   SignDocument,
@@ -114,6 +115,25 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
        <p style="margin:24px 0;">${button("View my certificate")}</p>
        <p style="font-size:14px;color:#80737f;">Welcome to the team, properly. 💜</p>`,
     ),
+  },
+];
+
+/** Example outbound integration — disabled until an admin adds a real endpoint. */
+export const INTEGRATIONS: Integration[] = [
+  {
+    id: "intg-idbadge",
+    name: "Create ID badge task",
+    event: "photo.submitted",
+    enabled: false,
+    method: "POST",
+    url: "https://your-task-system.example.com/api/tasks",
+    headers: [
+      { key: "Content-Type", value: "application/json" },
+      { key: "Authorization", value: "Bearer YOUR_API_KEY" },
+    ],
+    bodyTemplate:
+      '{\n  "title": "Create ID badge for {{full_name}}",\n  "assignee_team": "Facilities",\n  "fields": {\n    "name": "{{full_name}}",\n    "role": "{{role}}",\n    "department": "{{department}}",\n    "photo_url": "{{photo_url}}"\n  }\n}',
+    updatedAt: null,
   },
 ];
 

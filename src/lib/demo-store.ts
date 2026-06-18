@@ -5,6 +5,7 @@ import {
   DIRECTORS,
   EMAIL_TEMPLATES,
   IDEAS,
+  INTEGRATIONS,
   LOCATIONS,
   MANAGERS,
   MODULES,
@@ -20,6 +21,8 @@ import type {
   DocumentSignature,
   EmailTemplate,
   Idea,
+  Integration,
+  IntegrationDelivery,
   Invite,
   Location,
   Manager,
@@ -62,6 +65,8 @@ interface DemoState {
   employeeAvatarUrl: string | null;
   documents: SignDocument[];
   signatures: DocumentSignature[]; // the demo employee's signatures
+  integrations: Integration[];
+  deliveries: IntegrationDelivery[];
 }
 
 function seedState(): DemoState {
@@ -111,6 +116,11 @@ function seedState(): DemoState {
     employeeAvatarUrl: null,
     documents: SIGN_DOCUMENTS.map((d) => ({ ...d })),
     signatures: [],
+    integrations: INTEGRATIONS.map((i) => ({
+      ...i,
+      headers: i.headers.map((h) => ({ ...h })),
+    })),
+    deliveries: [],
   };
 }
 

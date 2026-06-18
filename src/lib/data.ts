@@ -802,6 +802,26 @@ export async function inviteStarter(
   return { ok: true, message: `Invitation emailed to ${input.email}.` };
 }
 
+/** Build the common token map for integration events about a starter. */
+export async function starterEventData(
+  profile: Profile,
+): Promise<Record<string, string>> {
+  let managerName = "";
+  if (profile.managerId) {
+    const m = await getManagerById(profile.managerId);
+    managerName = m?.name ?? "";
+  }
+  return {
+    full_name: profile.fullName,
+    first_name: profile.fullName.split(" ")[0] ?? "",
+    email: profile.email,
+    role: profile.roleTag,
+    department: profile.department ?? "",
+    manager_name: managerName,
+    starter_id: profile.id,
+  };
+}
+
 /** Set the signed-in user's profile photo (used for their avatar + ID badge). */
 export async function updateMyAvatar(
   profile: Profile,

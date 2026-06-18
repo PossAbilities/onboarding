@@ -21,7 +21,19 @@ import {
   updateStarter,
   type CollectionName,
 } from "@/lib/data";
-import type { EmailTemplate, Module, SignDocument } from "@/lib/types";
+import {
+  createIntegration,
+  deleteIntegration,
+  saveIntegration,
+  testIntegration,
+} from "@/lib/integrations";
+import { sampleDataFor } from "@/lib/integration-events";
+import type {
+  EmailTemplate,
+  Integration,
+  Module,
+  SignDocument,
+} from "@/lib/types";
 
 export type InviteState =
   | { ok: boolean; message: string }
@@ -52,6 +64,21 @@ export async function inviteStarterAction(
     department,
     managerId,
   });
+  if (res.ok) {
+    const { dispatchEvent } = await import("@/lib/integrations");
+    const { getManagerById } = await import("@/lib/data");
+    const manager = managerId ? await getManagerById(managerId) : undefined;
+    await dispatchEvent("starter.invited", {
+      full_name: fullName,
+      first_name: fullName.split(" ")[0] ?? "",
+      email,
+      role: roleTag,
+      department: department ?? "",
+      manager_name: manager?.name ?? "",
+      starter_id: email,
+      invited_by: admin.fullName,
+    });
+  }
   revalidatePath("/admin/starters");
   revalidatePath("/admin");
   return res;
@@ -252,6 +279,50 @@ export async function deleteDocumentAction(
   await deleteDocument(id);
   revalidateDocs();
   return { ok: true, message: "Document deleted." };
+}
+
+/* ───────────────────────── Integrations ──────────────────────────── */
+
+export async function saveIntegrationAction(
+  integration: Integration,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  if (!integration?.id) return { ok: false, message: "Missing id." };
+  if (!integration.name?.trim()) return { ok: false, message: "Give it a name." };
+  if (!/^https?:\/\//.test(integration.url)) {
+    return { ok: false, message: "Enter a valid https:// endpoint URL." };
+  }
+  await saveIntegration(integration);
+  revalidatePath("/admin/integrations");
+  return { ok: true, message: "Integration saved." };
+}
+
+export async function createIntegrationAction(): Promise<{
+  integration: Integration;
+}> {
+  await requireAdmin();
+  const integration = await createIntegration();
+  revalidatePath("/admin/integrations");
+  return { integration };
+}
+
+export async function deleteIntegrationAction(
+  id: string,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  await deleteIntegration(id);
+  revalidatePath("/admin/integrations");
+  return { ok: true, message: "Integration deleted." };
+}
+
+/** Fire one integration with sample data and report the response. */
+export async function testIntegrationAction(
+  integration: Integration,
+): Promise<{ ok: boolean; statusCode: number | null; error: string | null }> {
+  await requireAdmin();
+  const res = await testIntegration(integration, sampleDataFor(integration.event));
+  revalidatePath("/admin/integrations");
+  return res;
 }
 
 /** Manually run the stalled-starter reminder job (same logic as the cron). */

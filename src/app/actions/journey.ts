@@ -5,11 +5,15 @@ import { requireProfile } from "@/lib/auth";
 import {
   collectEasterEgg,
   completeModule,
+  getDocuments,
+  getModuleById,
   signDocument,
+  starterEventData,
   submitIdea,
   updateMyAvatar,
   voteIdea,
 } from "@/lib/data";
+import { dispatchEvent } from "@/lib/integrations";
 
 export async function completeModuleAction(moduleId: string, score?: number) {
   const profile = await requireProfile();
@@ -17,6 +21,25 @@ export async function completeModuleAction(moduleId: string, score?: number) {
   revalidatePath("/journey");
   revalidatePath("/modules", "layout");
   revalidatePath("/badges");
+
+  const mod = await getModuleById(moduleId);
+  if (mod) {
+    const base = await starterEventData(profile);
+    await dispatchEvent("module.completed", {
+      ...base,
+      module_id: mod.id,
+      module_title: mod.shortTitle,
+    });
+    if (mod.kind === "certificate") {
+      await dispatchEvent("journey.completed", {
+        ...base,
+        certificate_serial: `PA-${new Date().getFullYear()}-${profile.id
+          .replace(/[^a-z0-9]/gi, "")
+          .slice(0, 4)
+          .toUpperCase()}`,
+      });
+    }
+  }
   return result;
 }
 
@@ -30,6 +53,13 @@ export async function saveProfilePhotoAction(moduleId: string, url: string) {
   revalidatePath("/modules", "layout");
   revalidatePath("/badges");
   revalidatePath("/leaderboard");
+
+  const base = await starterEventData(profile);
+  await dispatchEvent("photo.submitted", {
+    ...base,
+    photo_url: url,
+    submitted_at: new Date().toISOString(),
+  });
   return { ok: true as const, result };
 }
 
@@ -45,6 +75,16 @@ export async function signDocumentAction(
   }
   await signDocument(profile, documentId, signedName.trim(), signatureData);
   revalidatePath("/documents");
+
+  const doc = (await getDocuments()).find((d) => d.id === documentId);
+  const base = await starterEventData(profile);
+  await dispatchEvent("document.signed", {
+    ...base,
+    document_id: documentId,
+    document_title: doc?.title ?? documentId,
+    signed_name: signedName.trim(),
+    signed_at: new Date().toISOString(),
+  });
   return { ok: true as const };
 }
 
@@ -69,6 +109,12 @@ export async function submitIdeaAction(input: {
   revalidatePath("/modules/big-idea");
   revalidatePath("/journey");
   revalidatePath("/badges");
+  await dispatchEvent("idea.submitted", {
+    author_name: profile.fullName,
+    title: input.title,
+    description: input.description,
+    category: input.category,
+  });
   return { ok: true as const, idea };
 }
 

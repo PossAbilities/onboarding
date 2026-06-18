@@ -184,6 +184,35 @@ export interface DocumentSignature {
   signedAt: string;
 }
 
+/** Outbound API integration (webhook) configured by an admin. */
+export interface IntegrationHeader {
+  key: string;
+  value: string;
+}
+
+export interface Integration {
+  id: string;
+  name: string;
+  event: string; // an IntegrationEvent value
+  enabled: boolean;
+  method: "POST" | "PUT" | "PATCH" | "GET";
+  url: string;
+  headers: IntegrationHeader[];
+  bodyTemplate: string; // JSON with {{token}} placeholders
+  updatedAt: string | null;
+}
+
+export interface IntegrationDelivery {
+  id: string;
+  integrationId: string;
+  integrationName: string;
+  event: string;
+  statusCode: number | null;
+  ok: boolean;
+  error: string | null;
+  createdAt: string;
+}
+
 export type EmailTrigger = "welcome" | "reminder" | "completion" | "custom";
 
 export interface EmailTemplate {

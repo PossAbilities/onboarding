@@ -178,6 +178,30 @@ create table if not exists public.ideas (
   created_at timestamptz not null default now()
 );
 
+-- Outbound integrations (webhooks) + delivery log — admin-only (hold API keys).
+create table if not exists public.integrations (
+  id text primary key,
+  name text not null,
+  event text not null,
+  enabled boolean not null default false,
+  method text not null default 'POST',
+  url text,
+  headers jsonb not null default '[]'::jsonb,
+  body_template text,
+  updated_at timestamptz default now()
+);
+
+create table if not exists public.integration_deliveries (
+  id uuid primary key default gen_random_uuid(),
+  integration_id text,
+  integration_name text,
+  event text,
+  status_code integer,
+  ok boolean,
+  error text,
+  created_at timestamptz not null default now()
+);
+
 -- ── Vote increment helper ───────────────────────────────────────────────────
 create or replace function public.increment_idea_votes (idea_id uuid)
 returns void language sql as $$
@@ -240,6 +264,16 @@ create policy "badges_owner" on public.user_badges for all
 drop policy if exists "eggs_owner" on public.easter_eggs;
 create policy "eggs_owner" on public.easter_eggs for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Integrations: admin-only (contain API keys). Dispatcher reads via service role.
+alter table public.integrations enable row level security;
+drop policy if exists "integrations_admin" on public.integrations;
+create policy "integrations_admin" on public.integrations for all
+  using (public.is_admin()) with check (public.is_admin());
+alter table public.integration_deliveries enable row level security;
+drop policy if exists "deliveries_admin_read" on public.integration_deliveries;
+create policy "deliveries_admin_read" on public.integration_deliveries for select
+  using (public.is_admin());
 
 -- Document signatures: a user manages their own; admins can read all.
 alter table public.document_signatures enable row level security;
