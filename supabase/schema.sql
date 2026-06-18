@@ -19,6 +19,7 @@ create table if not exists public.profiles (
   started_at timestamptz,
   last_activity_at timestamptz,
   invited_by uuid,
+  metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
 
@@ -202,6 +203,25 @@ create table if not exists public.integration_deliveries (
   created_at timestamptz not null default now()
 );
 
+-- Inbound webhooks: API keys + request log (admin-only; keys are secrets).
+create table if not exists public.api_keys (
+  id text primary key,
+  name text not null,
+  key text not null unique,
+  revoked boolean not null default false,
+  last_used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.inbound_events (
+  id uuid primary key default gen_random_uuid(),
+  endpoint text,
+  ok boolean,
+  status integer,
+  summary text,
+  created_at timestamptz not null default now()
+);
+
 -- ── Vote increment helper ───────────────────────────────────────────────────
 create or replace function public.increment_idea_votes (idea_id uuid)
 returns void language sql as $$
@@ -273,6 +293,15 @@ create policy "integrations_admin" on public.integrations for all
 alter table public.integration_deliveries enable row level security;
 drop policy if exists "deliveries_admin_read" on public.integration_deliveries;
 create policy "deliveries_admin_read" on public.integration_deliveries for select
+  using (public.is_admin());
+
+alter table public.api_keys enable row level security;
+drop policy if exists "api_keys_admin" on public.api_keys;
+create policy "api_keys_admin" on public.api_keys for all
+  using (public.is_admin()) with check (public.is_admin());
+alter table public.inbound_events enable row level security;
+drop policy if exists "inbound_admin_read" on public.inbound_events;
+create policy "inbound_admin_read" on public.inbound_events for select
   using (public.is_admin());
 
 -- Document signatures: a user manages their own; admins can read all.

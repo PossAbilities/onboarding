@@ -28,7 +28,9 @@ import {
   testIntegration,
 } from "@/lib/integrations";
 import { sampleDataFor } from "@/lib/integration-events";
+import { createApiKey, revokeApiKey } from "@/lib/inbound";
 import type {
+  ApiKey,
   EmailTemplate,
   Integration,
   Module,
@@ -279,6 +281,24 @@ export async function deleteDocumentAction(
   await deleteDocument(id);
   revalidateDocs();
   return { ok: true, message: "Document deleted." };
+}
+
+/* ───────────────────── Inbound API keys ──────────────────────────── */
+
+export async function createApiKeyAction(name: string): Promise<{ key: ApiKey }> {
+  await requireAdmin();
+  const key = await createApiKey(name);
+  revalidatePath("/admin/integrations");
+  return { key };
+}
+
+export async function revokeApiKeyAction(
+  id: string,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  await revokeApiKey(id);
+  revalidatePath("/admin/integrations");
+  return { ok: true };
 }
 
 /* ───────────────────────── Integrations ──────────────────────────── */

@@ -14,6 +14,7 @@ import {
   VALUES,
 } from "./seed";
 import type {
+  ApiKey,
   Badge,
   Benefit,
   CompanyValue,
@@ -21,6 +22,7 @@ import type {
   DocumentSignature,
   EmailTemplate,
   Idea,
+  InboundEvent,
   Integration,
   IntegrationDelivery,
   Invite,
@@ -67,6 +69,8 @@ interface DemoState {
   signatures: DocumentSignature[]; // the demo employee's signatures
   integrations: Integration[];
   deliveries: IntegrationDelivery[];
+  apiKeys: ApiKey[];
+  inboundEvents: InboundEvent[];
 }
 
 function seedState(): DemoState {
@@ -121,6 +125,8 @@ function seedState(): DemoState {
       headers: i.headers.map((h) => ({ ...h })),
     })),
     deliveries: [],
+    apiKeys: [],
+    inboundEvents: [],
   };
 }
 

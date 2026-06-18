@@ -184,6 +184,25 @@ export interface DocumentSignature {
   signedAt: string;
 }
 
+/** API key allowing an external system to call the inbound webhooks. */
+export interface ApiKey {
+  id: string;
+  name: string;
+  key: string;
+  revoked: boolean;
+  lastUsedAt: string | null;
+  createdAt: string;
+}
+
+export interface InboundEvent {
+  id: string;
+  endpoint: string;
+  ok: boolean;
+  status: number;
+  summary: string;
+  createdAt: string;
+}
+
 /** Outbound API integration (webhook) configured by an admin. */
 export interface IntegrationHeader {
   key: string;
