@@ -3,10 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth";
 import {
+  addNotification,
   collectEasterEgg,
   completeModule,
+  getBadges,
   getDocuments,
   getModuleById,
+  markAllNotificationsRead,
+  markNotificationRead,
   signDocument,
   starterEventData,
   submitIdea,
@@ -23,6 +27,19 @@ export async function completeModuleAction(moduleId: string, score?: number) {
   revalidatePath("/modules", "layout");
   revalidatePath("/badges");
 
+  // Notify on a newly-unlocked badge.
+  if (result.badgeId) {
+    const badge = (await getBadges()).find((b) => b.id === result.badgeId);
+    if (badge) {
+      await addNotification(profile.id, {
+        title: `Badge unlocked: ${badge.name}`,
+        body: `${badge.description} +${result.xp} XP!`,
+        icon: "workspace_premium",
+        href: "/badges",
+      });
+    }
+  }
+
   const mod = await getModuleById(moduleId);
   if (mod) {
     const base = await starterEventData(profile);
@@ -32,6 +49,12 @@ export async function completeModuleAction(moduleId: string, score?: number) {
       module_title: mod.shortTitle,
     });
     if (mod.kind === "certificate") {
+      await addNotification(profile.id, {
+        title: "Induction complete! 🎉",
+        body: "You've reached the summit. Download your certificate.",
+        icon: "emoji_events",
+        href: "/modules/certificate",
+      });
       await dispatchEvent("journey.completed", {
         ...base,
         certificate_serial: `PA-${new Date().getFullYear()}-${profile.id
@@ -115,6 +138,18 @@ export async function signDocumentAction(
     signed_at: new Date().toISOString(),
   });
   return { ok: true as const };
+}
+
+export async function markNotificationReadAction(id: string) {
+  const profile = await requireProfile();
+  await markNotificationRead(profile.id, id);
+  revalidatePath("/journey");
+}
+
+export async function markAllNotificationsReadAction() {
+  const profile = await requireProfile();
+  await markAllNotificationsRead(profile.id);
+  revalidatePath("/journey");
 }
 
 export async function collectEggAction(eggId: string) {

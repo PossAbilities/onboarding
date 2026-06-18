@@ -16,6 +16,7 @@ import {
 } from "./seed";
 import type {
   ApiKey,
+  AppNotification,
   Badge,
   Benefit,
   CompanyValue,
@@ -75,6 +76,7 @@ interface DemoState {
   apiKeys: ApiKey[];
   inboundEvents: InboundEvent[];
   offices: string[];
+  notifications: AppNotification[]; // the demo employee's notifications
 }
 
 function seedState(): DemoState {
@@ -133,6 +135,26 @@ function seedState(): DemoState {
     apiKeys: [],
     inboundEvents: [],
     offices: [...OFFICES],
+    notifications: [
+      {
+        id: "n-welcome",
+        title: "Welcome to PossAbilities! 💜",
+        body: "Your induction journey is ready. Start with Mission 01.",
+        icon: "celebration",
+        href: "/journey",
+        read: false,
+        createdAt: "2026-06-12T09:00:00Z",
+      },
+      {
+        id: "n-firstbadge",
+        title: "Badge unlocked: First Contact",
+        body: "You watched the welcome video. +50 XP!",
+        icon: "workspace_premium",
+        href: "/badges",
+        read: false,
+        createdAt: "2026-06-12T10:00:00Z",
+      },
+    ],
   };
 }
 

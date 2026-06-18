@@ -6,7 +6,8 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { ButtonLink } from "@/components/ui/Button";
 import { SidebarNav, type NavItem } from "./SidebarNav";
 import { UserMenu } from "./UserMenu";
-import { getJourneyState } from "@/lib/data";
+import { NotificationBell } from "./NotificationBell";
+import { getJourneyState, getMyNotifications } from "@/lib/data";
 import { statusFor } from "@/lib/journey";
 import type { Profile } from "@/lib/types";
 
@@ -26,7 +27,10 @@ export async function EmployeeShell({
   profile: Profile;
   children: ReactNode;
 }) {
-  const journey = await getJourneyState(profile);
+  const [journey, notifications] = await Promise.all([
+    getJourneyState(profile),
+    getMyNotifications(profile.id),
+  ]);
   const nextModule =
     journey.modules.find(
       (m) => statusFor(m.id, journey.progress) === "in_progress",
@@ -100,14 +104,7 @@ export async function EmployeeShell({
             <span className="hidden items-center gap-1 rounded-full bg-tertiary-fixed px-3 py-1.5 text-xs font-bold text-on-tertiary-fixed-variant sm:inline-flex">
               <Icon name="bolt" size={16} fill /> {profile.journeyPoints} XP
             </span>
-            <button
-              type="button"
-              className="relative rounded-full p-2 text-on-surface-variant hover:bg-surface-container"
-              aria-label="Notifications"
-            >
-              <Icon name="notifications" size={22} />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-secondary" />
-            </button>
+            <NotificationBell items={notifications} />
             <UserMenu
               name={profile.fullName}
               roleTag={profile.roleTag}

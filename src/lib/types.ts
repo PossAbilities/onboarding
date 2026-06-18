@@ -232,6 +232,16 @@ export interface IntegrationDelivery {
   createdAt: string;
 }
 
+export interface AppNotification {
+  id: string;
+  title: string;
+  body: string;
+  icon: string;
+  href: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
 export type EmailTrigger = "welcome" | "reminder" | "completion" | "custom";
 
 export interface EmailTemplate {

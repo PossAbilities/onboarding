@@ -7,6 +7,7 @@ import { EMAIL_TEMPLATES, MODULES } from "./seed";
 import type {
   Badge,
   Benefit,
+  AppNotification,
   CollectionName,
   CompanyValue,
   Director,
@@ -268,6 +269,92 @@ export async function saveOffices(list: string[]): Promise<void> {
       { key: "offices", value: clean, updated_at: new Date().toISOString() },
       { onConflict: "key" },
     );
+}
+
+/* ───────────────────────── Notifications ─────────────────────────── */
+
+export async function getMyNotifications(
+  userId: string,
+): Promise<AppNotification[]> {
+  if (!isSupabaseConfigured) {
+    return [...demoState().notifications].sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    );
+  }
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(30);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    title: r.title,
+    body: r.body ?? "",
+    icon: r.icon ?? "notifications",
+    href: r.href ?? null,
+    read: r.read ?? false,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function markNotificationRead(
+  userId: string,
+  id: string,
+): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const n = demoState().notifications.find((x) => x.id === id);
+    if (n) n.read = true;
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", userId);
+}
+
+export async function markAllNotificationsRead(userId: string): Promise<void> {
+  if (!isSupabaseConfigured) {
+    demoState().notifications.forEach((n) => (n.read = true));
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("notifications").update({ read: true }).eq("user_id", userId).eq("read", false);
+}
+
+/** Add a notification for a user (uses service role so it works from any flow). */
+export async function addNotification(
+  userId: string,
+  n: { title: string; body?: string; icon?: string; href?: string | null },
+): Promise<void> {
+  const now = new Date().toISOString();
+  if (!isSupabaseConfigured) {
+    demoState().notifications.push({
+      id: `n-${Date.now()}`,
+      title: n.title,
+      body: n.body ?? "",
+      icon: n.icon ?? "notifications",
+      href: n.href ?? null,
+      read: false,
+      createdAt: now,
+    });
+    return;
+  }
+  try {
+    const { createSupabaseAdminClient } = await import("./supabase/admin");
+    const admin = createSupabaseAdminClient();
+    await admin.from("notifications").insert({
+      user_id: userId,
+      title: n.title,
+      body: n.body ?? "",
+      icon: n.icon ?? "notifications",
+      href: n.href ?? null,
+      read: false,
+      created_at: now,
+    });
+  } catch {
+    /* best-effort */
+  }
 }
 
 /* ───────────────────── Documents & e-signatures ──────────────────── */
@@ -825,6 +912,14 @@ export async function inviteStarter(
       is_admin: false,
       status: "invited",
       invited_by: invitedBy,
+    });
+    await admin.from("notifications").insert({
+      user_id: data.user.id,
+      title: "Welcome to PossAbilities! 💜",
+      body: "Your induction journey is ready — start with Mission 01.",
+      icon: "celebration",
+      href: "/journey",
+      read: false,
     });
   }
   return { ok: true, message: `Invitation emailed to ${input.email}.` };
