@@ -38,7 +38,7 @@ function emailShell(body: string): string {
       <tr><td align="center">
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;max-width:600px;width:100%;">
           <tr><td style="background:linear-gradient(135deg,#48065a,#ec008c);padding:28px 32px;">
-            <span style="font-size:24px;font-weight:900;color:#ffffff;">Poss<span style="color:#ffd9e4;">Abilities</span></span>
+            <span style="font-family:'Avenir Heavy','Avenir Next','Avenir',Arial,sans-serif;font-size:24px;font-weight:800;color:#ffffff;">Poss<span style="color:#ffd9e4;">Abilities</span></span>
           </td></tr>
           <tr><td style="padding:32px;">${body}</td></tr>
           <tr><td style="padding:20px 32px;background:#fbf1f2;color:#80737f;font-size:12px;">

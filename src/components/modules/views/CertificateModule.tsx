@@ -43,7 +43,7 @@ export async function CertificateModule(props: CertificateViewProps) {
       {/* Certificate */}
       <div className="print-area mt-6 overflow-hidden rounded-2xl border-4 border-primary-container bg-surface-container-lowest p-8 text-center journey-card-shadow md:p-12">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-black">
+          <span className="font-avenir text-sm font-extrabold">
             <span className="text-brand-pink">Poss</span>
             <span className="text-primary-container">Abilities</span> Journey
           </span>
