@@ -19,7 +19,7 @@ export default function LoginPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Brand panel */}
       <div className="relative hidden flex-col justify-between overflow-hidden gradient-purple-pink p-12 text-on-primary lg:flex">
-        <Logo size="text-3xl" href={null} />
+        <Logo size="text-3xl" href={null} onDark />
         <div>
           <h1 className="text-5xl font-black leading-[1.05]">
             Welcome to your
