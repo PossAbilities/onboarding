@@ -54,6 +54,14 @@ insert into public.locations (id, name, region, description, image_url, services
   ('loc-4','Bury Enterprise Café','Greater Manchester','A social enterprise café offering employment and training.','https://picsum.photos/seed/loc-bury/800/500','{"Enterprise","Employment","Café"}')
 on conflict (id) do update set name = excluded.name, description = excluded.description;
 
+insert into public.company_values (id, label, icon, match, "order") values
+  ('passionate','Remain Passionate','favorite','Dedicated to, and enthusiastic about, providing exceptional services.',1),
+  ('person-centred','Are Person Centred','diversity_3','Everyone has the right to exercise choice and control in directing their lives.',2),
+  ('integrity','Show Integrity','handshake','Communicate openly and honestly, building relationships based on trust and respect.',3),
+  ('creativity','Apply Creativity','lightbulb','Thriving on innovation and encouraging positive risk taking.',4),
+  ('happy','Stay Happy','sentiment_very_satisfied','We believe that fun is a key to success.',5)
+on conflict (id) do update set label = excluded.label, icon = excluded.icon, match = excluded.match, "order" = excluded."order";
+
 insert into public.ideas (author_name, author_avatar, title, description, category, status, votes) values
   ('James Miller','https://i.pravatar.cc/300?img=15','Automated Inventory Restocking via AI','Use computer vision to track stock levels and auto-order essentials.','Operations','implemented',3248),
   ('Sarah Jenkins','https://i.pravatar.cc/300?img=48','Paperless Onboarding Flow','Digitise all HR contracts and safety modules for new starters.','People','popular',3199),

@@ -5,6 +5,7 @@ import { EasterEgg } from "../EasterEgg";
 import { ValuesGame } from "@/components/games/ValuesGame";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
+import { getValues } from "@/lib/data";
 import { SAMPLE_VIDEO } from "@/lib/seed";
 import type { ModuleViewProps } from "../types";
 
@@ -23,7 +24,8 @@ const AWARDS = [
   },
 ];
 
-export function CultureModule(props: ModuleViewProps) {
+export async function CultureModule(props: ModuleViewProps) {
+  const values = await getValues();
   return (
     <ModuleScaffold
       {...props}
@@ -61,6 +63,7 @@ export function CultureModule(props: ModuleViewProps) {
         <ValuesGame
           moduleId={props.module.id}
           alreadyCompleted={props.alreadyCompleted}
+          values={values}
         />
       </div>
 

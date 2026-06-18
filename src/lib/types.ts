@@ -147,12 +147,22 @@ export interface Invite {
   createdAt: string;
 }
 
+/** A PossAbilities value used in the culture Values-Match game. */
+export interface CompanyValue {
+  id: string;
+  label: string; // e.g. "Remain Passionate"
+  icon: string; // material symbol
+  match: string; // the description the player matches to the value
+  order: number;
+}
+
 export type CollectionName =
   | "directors"
   | "benefits"
   | "pets"
   | "locations"
-  | "badges";
+  | "badges"
+  | "values";
 
 /** Aggregated journey state for the signed-in employee. */
 export interface JourneyState {

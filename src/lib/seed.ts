@@ -1,6 +1,7 @@
 import type {
   Badge,
   Benefit,
+  CompanyValue,
   Director,
   Idea,
   Location,
@@ -26,6 +27,47 @@ const SAMPLE_VIDEO_2 =
 const img = (seed: string, w = 800, h = 480) =>
   `https://picsum.photos/seed/${seed}/${w}/${h}`;
 const avatar = (n: number) => `https://i.pravatar.cc/300?img=${n}`;
+
+/** PossAbilities values (brand manual) — drive the culture Values-Match game. */
+export const VALUES: CompanyValue[] = [
+  {
+    id: "passionate",
+    label: "Remain Passionate",
+    icon: "favorite",
+    match: "Dedicated to, and enthusiastic about, providing exceptional services.",
+    order: 1,
+  },
+  {
+    id: "person-centred",
+    label: "Are Person Centred",
+    icon: "diversity_3",
+    match:
+      "Everyone has the right to exercise choice and control in directing their lives.",
+    order: 2,
+  },
+  {
+    id: "integrity",
+    label: "Show Integrity",
+    icon: "handshake",
+    match:
+      "Communicate openly and honestly, building relationships based on trust and respect.",
+    order: 3,
+  },
+  {
+    id: "creativity",
+    label: "Apply Creativity",
+    icon: "lightbulb",
+    match: "Thriving on innovation and encouraging positive risk taking.",
+    order: 4,
+  },
+  {
+    id: "happy",
+    label: "Stay Happy",
+    icon: "sentiment_very_satisfied",
+    match: "We believe that fun is a key to success.",
+    order: 5,
+  },
+];
 
 export const BADGES: Badge[] = [
   {

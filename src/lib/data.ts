@@ -8,6 +8,7 @@ import type {
   Badge,
   Benefit,
   CollectionName,
+  CompanyValue,
   Director,
   Idea,
   IdeaStatus,
@@ -156,6 +157,20 @@ export async function getBadges(): Promise<Badge[]> {
   const { data } = await supabase.from("badges").select("*");
   return (data ?? []).map(mapBadgeRow);
 }
+export async function getValues(): Promise<CompanyValue[]> {
+  if (!isSupabaseConfigured) return [...demoState().values].sort(byOrder);
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("company_values")
+    .select("*")
+    .order("order");
+  return (data ?? []).map(mapValueRow);
+}
+
+/** `values` maps to the `company_values` table (`values` is a SQL keyword). */
+function tableFor(name: CollectionName): string {
+  return name === "values" ? "company_values" : name;
+}
 
 /** Create or update one item in a content collection. */
 export async function saveCollectionItem(
@@ -170,7 +185,9 @@ export async function saveCollectionItem(
     return;
   }
   const supabase = await createSupabaseServerClient();
-  await supabase.from(name).upsert(collectionToRow(name, item), { onConflict: "id" });
+  await supabase
+    .from(tableFor(name))
+    .upsert(collectionToRow(name, item), { onConflict: "id" });
 }
 
 export async function deleteCollectionItem(
@@ -183,7 +200,7 @@ export async function deleteCollectionItem(
     return;
   }
   const supabase = await createSupabaseServerClient();
-  await supabase.from(name).delete().eq("id", id);
+  await supabase.from(tableFor(name)).delete().eq("id", id);
 }
 
 /** Reorder collections that have an `order` field (directors, benefits). */
@@ -200,8 +217,9 @@ export async function reorderCollection(
     return;
   }
   const supabase = await createSupabaseServerClient();
+  const table = tableFor(name);
   await Promise.all(
-    ids.map((id, i) => supabase.from(name).update({ order: i + 1 }).eq("id", id)),
+    ids.map((id, i) => supabase.from(table).update({ order: i + 1 }).eq("id", id)),
   );
 }
 
@@ -656,6 +674,15 @@ function mapBadgeRow(r: any): Badge {
     criteria: r.criteria ?? "",
   };
 }
+function mapValueRow(r: any): CompanyValue {
+  return {
+    id: r.id,
+    label: r.label,
+    icon: r.icon ?? "star",
+    match: r.match ?? "",
+    order: r.order ?? 0,
+  };
+}
 
 /** Map an editor item (camelCase) to a Supabase row (snake_case) per collection. */
 function collectionToRow(
@@ -709,6 +736,14 @@ function collectionToRow(
         icon: item.icon,
         xp: item.xp ?? 0,
         criteria: item.criteria,
+      };
+    case "values":
+      return {
+        id: item.id,
+        label: item.label,
+        icon: item.icon,
+        match: item.match,
+        order: item.order ?? 0,
       };
   }
 }

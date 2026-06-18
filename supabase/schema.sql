@@ -86,6 +86,16 @@ create table if not exists public.locations (
   services text[] default '{}'
 );
 
+-- PossAbilities values for the culture Values-Match game.
+-- Named company_values because "values" is a reserved SQL keyword.
+create table if not exists public.company_values (
+  id text primary key,
+  label text not null,
+  icon text default 'star',
+  match text,
+  "order" integer default 0
+);
+
 -- ── Per-user dynamic data ───────────────────────────────────────────────────
 create table if not exists public.progress (
   user_id uuid not null references public.profiles (id) on delete cascade,

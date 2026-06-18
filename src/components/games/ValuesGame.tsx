@@ -5,42 +5,7 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { clsx } from "@/lib/cn";
 import { completeModuleAction } from "@/app/actions/journey";
-
-/** The five PossAbilities values, straight from the brand manual. */
-const VALUES = [
-  {
-    id: "passionate",
-    label: "Remain Passionate",
-    icon: "favorite",
-    match: "Dedicated to, and enthusiastic about, providing exceptional services.",
-  },
-  {
-    id: "person-centred",
-    label: "Are Person Centred",
-    icon: "diversity_3",
-    match:
-      "Everyone has the right to exercise choice and control in directing their lives.",
-  },
-  {
-    id: "integrity",
-    label: "Show Integrity",
-    icon: "handshake",
-    match:
-      "Communicate openly and honestly, building relationships based on trust and respect.",
-  },
-  {
-    id: "creativity",
-    label: "Apply Creativity",
-    icon: "lightbulb",
-    match: "Thriving on innovation and encouraging positive risk taking.",
-  },
-  {
-    id: "happy",
-    label: "Stay Happy",
-    icon: "sentiment_very_satisfied",
-    match: "We believe that fun is a key to success.",
-  },
-];
+import type { CompanyValue } from "@/lib/types";
 
 // Deterministic shuffle (no Math.random — stable across renders/SSR).
 function shuffle<T>(arr: T[], seed = 3): T[] {
@@ -56,12 +21,15 @@ function shuffle<T>(arr: T[], seed = 3): T[] {
 export function ValuesGame({
   moduleId,
   alreadyCompleted,
+  values,
 }: {
   moduleId: string;
   alreadyCompleted: boolean;
+  values: CompanyValue[];
 }) {
   const router = useRouter();
-  const descriptions = useMemo(() => shuffle(VALUES), []);
+  const VALUES = values;
+  const descriptions = useMemo(() => shuffle(VALUES), [VALUES]);
   const [selectedValue, setSelectedValue] = useState<string | null>(null);
   const [matched, setMatched] = useState<string[]>(
     alreadyCompleted ? VALUES.map((v) => v.id) : [],
@@ -69,7 +37,7 @@ export function ValuesGame({
   const [wrong, setWrong] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  const allMatched = matched.length === VALUES.length;
+  const allMatched = VALUES.length > 0 && matched.length === VALUES.length;
 
   const pick = (valueId: string) => {
     if (matched.includes(valueId)) return;

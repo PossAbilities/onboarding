@@ -6,6 +6,7 @@ import {
   getDirectors,
   getLocations,
   getPets,
+  getValues,
   type CollectionName,
 } from "@/lib/data";
 import { Icon } from "@/components/ui/Icon";
@@ -19,6 +20,7 @@ const TABS: { key: CollectionName; label: string; icon: string }[] = [
   { key: "benefits", label: "Benefits", icon: "redeem" },
   { key: "pets", label: "Pets", icon: "pets" },
   { key: "locations", label: "Locations", icon: "location_on" },
+  { key: "values", label: "Values", icon: "diversity_2" },
   { key: "badges", label: "Badges", icon: "workspace_premium" },
 ];
 
@@ -82,5 +84,7 @@ async function loadCollection(name: CollectionName): Promise<Item[]> {
       return (await getLocations()) as unknown as Item[];
     case "badges":
       return (await getBadges()) as unknown as Item[];
+    case "values":
+      return (await getValues()) as unknown as Item[];
   }
 }

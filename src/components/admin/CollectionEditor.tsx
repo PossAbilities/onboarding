@@ -111,6 +111,22 @@ const SPECS: Record<CollectionName, Spec> = {
       { key: "criteria", label: "How it's earned", type: "text" },
     ],
   },
+  values: {
+    singular: "Value",
+    titleKey: "label",
+    subtitleKey: "match",
+    iconKey: "icon",
+    hasOrder: true,
+    fields: [
+      { key: "label", label: "Value (e.g. 'Remain Passionate')", type: "text" },
+      { key: "icon", label: "Icon (Material Symbol name)", type: "icon" },
+      {
+        key: "match",
+        label: "Description players match to this value",
+        type: "textarea",
+      },
+    ],
+  },
 };
 
 type Item = Record<string, unknown> & { id: string };

@@ -7,10 +7,12 @@ import {
   LOCATIONS,
   MODULES,
   PETS,
+  VALUES,
 } from "./seed";
 import type {
   Badge,
   Benefit,
+  CompanyValue,
   Director,
   Idea,
   Invite,
@@ -46,6 +48,7 @@ interface DemoState {
   pets: Pet[];
   locations: Location[];
   badges: Badge[];
+  values: CompanyValue[];
 }
 
 function seedState(): DemoState {
@@ -56,6 +59,12 @@ function seedState(): DemoState {
         moduleId: "m-welcome",
         status: "completed",
         completedAt: "2026-06-12T10:00:00Z",
+        score: null,
+      },
+      "m-directors": {
+        moduleId: "m-directors",
+        status: "completed",
+        completedAt: "2026-06-12T11:00:00Z",
         score: null,
       },
       "m-culture": {
@@ -83,6 +92,7 @@ function seedState(): DemoState {
     pets: PETS.map((p) => ({ ...p })),
     locations: LOCATIONS.map((l) => ({ ...l, services: [...l.services] })),
     badges: BADGES.map((b) => ({ ...b })),
+    values: VALUES.map((v) => ({ ...v })),
   };
 }
 
