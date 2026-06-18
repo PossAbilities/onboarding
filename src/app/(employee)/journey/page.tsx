@@ -34,6 +34,13 @@ export default async function JourneyPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
+      {profile.isAdmin && (
+        <div className="mb-6 flex items-center gap-2 rounded-xl border border-primary-container/30 bg-primary-fixed/40 px-4 py-3 text-sm font-bold text-on-primary-fixed-variant">
+          <Icon name="visibility" size={20} fill />
+          Admin preview — every step is unlocked so you can flow through the whole
+          journey.
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>

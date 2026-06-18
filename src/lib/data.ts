@@ -455,7 +455,15 @@ async function getProgressRecords(userId: string): Promise<ModuleProgress[]> {
 export async function getJourneyState(profile: Profile): Promise<JourneyState> {
   const records = await getProgressRecords(profile.id);
   const modules = await getModules();
-  const { progress, percentComplete } = computeJourney(records, modules);
+  const computed = computeJourney(records, modules);
+  const { percentComplete } = computed;
+
+  // Admins can preview the whole journey — nothing is locked for them.
+  const progress = profile.isAdmin
+    ? computed.progress.map((p) =>
+        p.status === "locked" ? { ...p, status: "available" as const } : p,
+      )
+    : computed.progress;
 
   const [earnedBadges, badges] = await Promise.all([
     isSupabaseConfigured
