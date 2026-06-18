@@ -4,7 +4,8 @@
  */
 
 export type ModuleKind =
-  | "video" // welcome video / meet the directors
+  | "video" // welcome video
+  | "directors" // meet the directors
   | "culture" // culture & values
   | "benefits" // perks
   | "bigidea" // innovation portal

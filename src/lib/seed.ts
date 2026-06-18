@@ -88,7 +88,7 @@ export const MODULES: Module[] = [
     title: "Mission 01: The Welcome",
     shortTitle: "Welcome Home",
     description:
-      "A message from our leadership about our mission and the road ahead. Meet the directors and learn who's who.",
+      "A message from our leadership about our mission and the road ahead. Your adventure with the team starts here.",
     estMinutes: 5,
     required: true,
     badgeId: "first-contact",
@@ -102,7 +102,7 @@ export const MODULES: Module[] = [
       },
       {
         type: "paragraph",
-        text: "This module is designed to give you a soft landing. You'll find three main components below: a welcome video from our CEO, a map of the campus, and a quick 'Vibe Check' quiz to see what you already know about PossAbilities.",
+        text: "This module gives you a soft landing: a welcome video from our CEO about who we are and where we're heading. Press play, and your progress saves automatically.",
       },
       {
         type: "quote",
@@ -112,12 +112,36 @@ export const MODULES: Module[] = [
     ],
   },
   {
-    id: "m-culture",
-    slug: "culture",
+    id: "m-directors",
+    slug: "meet-the-directors",
     order: 2,
     level: 2,
+    kind: "directors",
+    title: "Mission 02: Meet the Directors",
+    shortTitle: "Meet the Directors",
+    description:
+      "The people steering the ship — and cheering you on. Get to know the directors and what each of them looks after.",
+    estMinutes: 6,
+    required: true,
+    badgeId: "people-person",
+    rewardXp: 80,
+    heroMediaUrl: null,
+    heroPoster: img("directors-hero", 1200, 675),
+    content: [
+      { type: "heading", text: "Who's who" },
+      {
+        type: "paragraph",
+        text: "You aren't just an employee — you're part of our ecosystem. Say hello to the leadership team and the areas they champion.",
+      },
+    ],
+  },
+  {
+    id: "m-culture",
+    slug: "culture",
+    order: 3,
+    level: 3,
     kind: "culture",
-    title: "Mission 02: Our Culture & Values",
+    title: "Mission 03: Our Culture & Values",
     shortTitle: "Our Culture",
     description:
       "Step into the heart of PossAbilities. Discover how we celebrate brilliance, foster innovation, and recognise the people who make our mission possible.",
@@ -138,10 +162,10 @@ export const MODULES: Module[] = [
   {
     id: "m-benefits",
     slug: "benefits",
-    order: 3,
-    level: 3,
+    order: 4,
+    level: 4,
     kind: "benefits",
-    title: "Mission 03: Your Life, Your Perks",
+    title: "Mission 04: Your Life, Your Perks",
     shortTitle: "Benefits",
     description:
       "We believe that when you thrive, we thrive. Our benefits are designed to support your financial health, professional growth, and personal wellbeing.",
@@ -162,10 +186,10 @@ export const MODULES: Module[] = [
   {
     id: "m-bigidea",
     slug: "big-idea",
-    order: 4,
-    level: 4,
+    order: 5,
+    level: 5,
     kind: "bigidea",
-    title: "Mission 04: The BIG Idea Portal",
+    title: "Mission 05: The BIG Idea Portal",
     shortTitle: "The BIG Idea",
     description:
       "Got a better way to do things? We want to hear it! Join the movement of thinkers and builders making our company better every day.",
@@ -186,10 +210,10 @@ export const MODULES: Module[] = [
   {
     id: "m-pets",
     slug: "very-important-pets",
-    order: 5,
-    level: 5,
+    order: 6,
+    level: 6,
     kind: "pets",
-    title: "Mission 05: Very Important Pets",
+    title: "Mission 06: Very Important Pets",
     shortTitle: "V.I.P. Wellbeing",
     description:
       "Our furry teammates are a huge part of our culture. Meet them here — and discover our wellbeing hub.",
@@ -210,10 +234,10 @@ export const MODULES: Module[] = [
   {
     id: "m-locations",
     slug: "locations",
-    order: 6,
-    level: 6,
+    order: 7,
+    level: 7,
     kind: "locations",
-    title: "Mission 06: Locations & Services",
+    title: "Mission 07: Locations & Services",
     shortTitle: "Locations",
     description:
       "Explore where we work and the brilliant services we deliver across the region.",
@@ -234,10 +258,10 @@ export const MODULES: Module[] = [
   {
     id: "m-certificate",
     slug: "certificate",
-    order: 7,
-    level: 7,
+    order: 8,
+    level: 8,
     kind: "certificate",
-    title: "Mission 07: Reach the Summit",
+    title: "Mission 08: Reach the Summit",
     shortTitle: "Certificate",
     description:
       "Finalise your induction by reviewing and signing your digital documents, then download your official completion certificate.",
