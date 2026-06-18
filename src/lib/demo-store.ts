@@ -9,6 +9,7 @@ import {
   LOCATIONS,
   MANAGERS,
   MODULES,
+  OFFICES,
   PETS,
   SIGN_DOCUMENTS,
   VALUES,
@@ -73,6 +74,7 @@ interface DemoState {
   deliveries: IntegrationDelivery[];
   apiKeys: ApiKey[];
   inboundEvents: InboundEvent[];
+  offices: string[];
 }
 
 function seedState(): DemoState {
@@ -130,6 +132,7 @@ function seedState(): DemoState {
     deliveries: [],
     apiKeys: [],
     inboundEvents: [],
+    offices: [...OFFICES],
   };
 }
 

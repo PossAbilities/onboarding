@@ -18,6 +18,7 @@ import {
   saveDocument,
   saveEmailTemplate,
   saveModule,
+  saveOffices,
   updateStarter,
   type CollectionName,
 } from "@/lib/data";
@@ -281,6 +282,16 @@ export async function deleteDocumentAction(
   await deleteDocument(id);
   revalidateDocs();
   return { ok: true, message: "Document deleted." };
+}
+
+export async function saveOfficesAction(
+  list: string[],
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  await saveOffices(list);
+  revalidatePath("/admin/settings");
+  revalidatePath("/modules", "layout");
+  return { ok: true, message: "Offices saved." };
 }
 
 /* ───────────────────── Inbound API keys ──────────────────────────── */

@@ -67,12 +67,14 @@ export function PhotoCapture({
   role,
   department,
   currentPhoto,
+  offices,
 }: {
   moduleId: string;
   name: string;
   role: string;
   department: string | null;
   currentPhoto: string | null;
+  offices: string[];
 }) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -90,6 +92,7 @@ export function PhotoCapture({
   const [nameOnBadge, setNameOnBadge] = useState(name);
   const [pronouns, setPronouns] = useState("");
   const [jobTitle, setJobTitle] = useState(role);
+  const [office, setOffice] = useState("");
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -163,6 +166,7 @@ export function PhotoCapture({
       nameOnBadge,
       pronouns,
       jobTitle,
+      office,
     });
     setSaving(false);
     if (res.ok) {
@@ -374,6 +378,21 @@ export function PhotoCapture({
                       />
                     </label>
                   </div>
+                  {offices.length > 0 && (
+                    <label className="block text-sm font-bold text-on-surface">
+                      Nearest office (where you&rsquo;ll collect your badge)
+                      <select
+                        value={office}
+                        onChange={(e) => setOffice(e.target.value)}
+                        className="field-focus mt-1 w-full rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+                      >
+                        <option value="">Select your nearest office…</option>
+                        {offices.map((o) => (
+                          <option key={o}>{o}</option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                 </div>
 
                 <h2 className="mt-5 text-lg font-black text-on-surface">

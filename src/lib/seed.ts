@@ -994,6 +994,15 @@ export const ROLE_TAGS = [
   "People & Culture",
 ];
 
+/** Office collection points for the ID-badge form (admin-editable). */
+export const OFFICES = [
+  "Rochdale (Head Office)",
+  "Heywood",
+  "Middleton",
+  "Bury",
+  "Oldham",
+];
+
 export const DEPARTMENTS = [
   "Supported Living",
   "Day Services",

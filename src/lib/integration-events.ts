@@ -38,6 +38,7 @@ export const INTEGRATION_EVENTS: IntegrationEventDef[] = [
       { key: "name_on_badge", label: "Name on badge", sample: "Alex Guru" },
       { key: "pronouns", label: "Pronouns", sample: "They / Them" },
       { key: "job_title", label: "Job title", sample: "Support Worker" },
+      { key: "office", label: "Nearest office", sample: "Rochdale (Head Office)" },
       { key: "photo_url", label: "Photo URL", sample: "https://…/photo.jpg" },
       { key: "submitted_at", label: "Submitted at", sample: "2026-06-18T09:00:00Z" },
     ],

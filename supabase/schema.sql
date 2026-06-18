@@ -222,6 +222,13 @@ create table if not exists public.inbound_events (
   created_at timestamptz not null default now()
 );
 
+-- Simple key/value app settings (e.g. the offices list for the ID-badge form).
+create table if not exists public.app_settings (
+  key text primary key,
+  value jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+
 -- ── Vote increment helper ───────────────────────────────────────────────────
 create or replace function public.increment_idea_votes (idea_id uuid)
 returns void language sql as $$
@@ -303,6 +310,14 @@ alter table public.inbound_events enable row level security;
 drop policy if exists "inbound_admin_read" on public.inbound_events;
 create policy "inbound_admin_read" on public.inbound_events for select
   using (public.is_admin());
+
+alter table public.app_settings enable row level security;
+drop policy if exists "app_settings_read" on public.app_settings;
+create policy "app_settings_read" on public.app_settings for select
+  using (auth.role() = 'authenticated');
+drop policy if exists "app_settings_write" on public.app_settings;
+create policy "app_settings_write" on public.app_settings for all
+  using (public.is_admin()) with check (public.is_admin());
 
 -- Document signatures: a user manages their own; admins can read all.
 alter table public.document_signatures enable row level security;

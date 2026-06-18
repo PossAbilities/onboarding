@@ -1,18 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/config";
+import { getOffices } from "@/lib/data";
 import { Icon } from "@/components/ui/Icon";
 import { Chip } from "@/components/ui/Chip";
+import { OfficesEditor } from "./OfficesEditor";
 
 export const metadata: Metadata = { title: "Admin · System Config" };
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const offices = await getOffices();
   return (
     <div className="mx-auto max-w-4xl">
       <h1 className="text-3xl font-black text-on-surface">System Config</h1>
       <p className="mt-1 text-on-surface-variant">
         Branding, journey rules and integrations.
       </p>
+
+      <div className="mt-6">
+        <OfficesEditor offices={offices} />
+      </div>
 
       {/* Backend status */}
       <div className="mt-6 rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 journey-card-shadow">

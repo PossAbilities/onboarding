@@ -1,8 +1,10 @@
 import { ModuleScaffold } from "../ModuleScaffold";
 import { PhotoCapture } from "../PhotoCapture";
+import { getOffices } from "@/lib/data";
 import type { ModuleViewProps } from "../types";
 
-export function PhotoModule(props: ModuleViewProps) {
+export async function PhotoModule(props: ModuleViewProps) {
+  const offices = await getOffices();
   return (
     <ModuleScaffold {...props}>
       <PhotoCapture
@@ -11,6 +13,7 @@ export function PhotoModule(props: ModuleViewProps) {
         role={props.profile.roleTag}
         department={props.profile.department}
         currentPhoto={props.profile.avatarUrl}
+        offices={offices}
       />
     </ModuleScaffold>
   );

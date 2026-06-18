@@ -48,6 +48,7 @@ export interface BadgeDetails {
   nameOnBadge?: string;
   pronouns?: string;
   jobTitle?: string;
+  office?: string;
 }
 
 /** Save the user's ID-badge photo + details and complete the step. */
@@ -63,10 +64,12 @@ export async function saveProfilePhotoAction(
   const nameOnBadge = (details.nameOnBadge ?? profile.fullName).trim();
   const jobTitle = (details.jobTitle ?? profile.roleTag).trim();
   const pronouns = (details.pronouns ?? "").trim();
+  const office = (details.office ?? "").trim();
   await updateMyProfileMeta(profile, {
     name_on_badge: nameOnBadge,
     pronouns,
     job_title: jobTitle,
+    office,
     photo_url: url,
   });
 
@@ -82,6 +85,7 @@ export async function saveProfilePhotoAction(
     name_on_badge: nameOnBadge,
     pronouns,
     job_title: jobTitle,
+    office,
     photo_url: url,
     submitted_at: new Date().toISOString(),
   });

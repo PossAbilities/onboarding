@@ -242,6 +242,34 @@ export async function reorderCollection(
 
 const byOrder = (a: { order: number }, b: { order: number }) => a.order - b.order;
 
+/* ───────────────────── Offices (ID-badge form) ───────────────────── */
+
+export async function getOffices(): Promise<string[]> {
+  if (!isSupabaseConfigured) return [...demoState().offices];
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("app_settings")
+    .select("value")
+    .eq("key", "offices")
+    .maybeSingle();
+  return Array.isArray(data?.value) ? (data!.value as string[]) : [];
+}
+
+export async function saveOffices(list: string[]): Promise<void> {
+  const clean = list.map((s) => s.trim()).filter(Boolean);
+  if (!isSupabaseConfigured) {
+    demoState().offices = clean;
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase
+    .from("app_settings")
+    .upsert(
+      { key: "offices", value: clean, updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
+}
+
 /* ───────────────────── Documents & e-signatures ──────────────────── */
 
 export async function getDocuments(): Promise<SignDocument[]> {
