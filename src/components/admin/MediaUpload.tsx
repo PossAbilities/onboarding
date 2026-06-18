@@ -4,7 +4,15 @@
 import { useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { uploadMediaAction } from "@/app/actions/media";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/config";
 import { clsx } from "@/lib/cn";
+
+const MAX_BYTES = 200 * 1024 * 1024; // 200 MB (direct upload)
+
+function safeName(name: string) {
+  return name.replace(/[^a-zA-Z0-9.\-_]/g, "-").slice(-60);
+}
 
 /**
  * Admin media picker: upload a photo/video (or paste a URL) with a live preview.
@@ -33,12 +41,34 @@ export function MediaUpload({
   const pick = async (file: File) => {
     setBusy(true);
     setError(null);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await uploadMediaAction(fd);
-    setBusy(false);
-    if ("url" in res) onChange(res.url);
-    else setError(res.error);
+    try {
+      if (file.size > MAX_BYTES) {
+        throw new Error("That file is too large (max 200 MB).");
+      }
+      if (isSupabaseConfigured) {
+        // Upload straight from the browser to Supabase Storage — no serverless
+        // payload limit, so large images and videos work.
+        const supabase = createSupabaseBrowserClient();
+        const path = `uploads/${Date.now()}-${safeName(file.name)}`;
+        const { error: upErr } = await supabase.storage
+          .from("media")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (upErr) throw new Error(upErr.message);
+        const { data } = supabase.storage.from("media").getPublicUrl(path);
+        onChange(data.publicUrl);
+      } else {
+        // Demo mode — small files become an in-preview data URL via the action.
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await uploadMediaAction(fd);
+        if ("url" in res) onChange(res.url);
+        else throw new Error(res.error);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const frame =
