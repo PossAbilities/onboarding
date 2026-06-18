@@ -1,13 +1,23 @@
 import {
+  BADGES,
+  BENEFITS,
   DEMO_STARTERS,
+  DIRECTORS,
   IDEAS,
+  LOCATIONS,
   MODULES,
+  PETS,
 } from "./seed";
 import type {
+  Badge,
+  Benefit,
+  Director,
   Idea,
   Invite,
+  Location,
   Module,
   ModuleProgress,
+  Pet,
   Profile,
   UserBadge,
 } from "./types";
@@ -30,6 +40,12 @@ interface DemoState {
   // Full mutable working copy of the mission catalogue. The admin editor reads
   // and writes this directly, so missions are completely customisable in demo.
   modules: Module[];
+  // Mutable content collections — fully editable from the admin Content Library.
+  directors: Director[];
+  benefits: Benefit[];
+  pets: Pet[];
+  locations: Location[];
+  badges: Badge[];
 }
 
 function seedState(): DemoState {
@@ -62,6 +78,11 @@ function seedState(): DemoState {
       ...m,
       content: m.content.map((b) => ({ ...b, items: b.items ? [...b.items] : undefined })),
     })),
+    directors: DIRECTORS.map((d) => ({ ...d })),
+    benefits: BENEFITS.map((b) => ({ ...b })),
+    pets: PETS.map((p) => ({ ...p })),
+    locations: LOCATIONS.map((l) => ({ ...l, services: [...l.services] })),
+    badges: BADGES.map((b) => ({ ...b })),
   };
 }
 

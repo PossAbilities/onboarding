@@ -16,10 +16,12 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
   return (
     <nav className="flex flex-col gap-1">
       {items.map((item) => {
-        const active =
-          item.href === "/journey"
-            ? pathname === "/journey"
-            : pathname.startsWith(item.href);
+        // Section-root links (/journey, /admin) match exactly; others also
+        // match their nested routes.
+        const isRoot = item.href === "/journey" || item.href === "/admin";
+        const active = isRoot
+          ? pathname === item.href
+          : pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <Link
             key={item.href}

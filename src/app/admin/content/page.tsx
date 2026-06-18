@@ -6,10 +6,7 @@ import { MissionEditor } from "./MissionEditor";
 export const metadata: Metadata = { title: "Admin · Journey Content" };
 
 export default async function ContentEditorPage() {
-  const [modules, badges] = await Promise.all([
-    getModules(),
-    Promise.resolve(getBadges()),
-  ]);
+  const [modules, badges] = await Promise.all([getModules(), getBadges()]);
 
   return (
     <div className="mx-auto max-w-6xl">

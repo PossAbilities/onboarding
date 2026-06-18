@@ -6,8 +6,8 @@ import { Icon } from "@/components/ui/Icon";
 import { getLocations } from "@/lib/data";
 import type { ModuleViewProps } from "../types";
 
-export function LocationsModule(props: ModuleViewProps) {
-  const locations = getLocations();
+export async function LocationsModule(props: ModuleViewProps) {
+  const locations = await getLocations();
 
   return (
     <ModuleScaffold {...props}>

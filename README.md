@@ -141,6 +141,12 @@ supabase/
 - Changes publish instantly (in-memory in demo mode; persisted to the `modules`
   table in connected mode).
 
+**Admin → Content Library** gives total control of every supporting content
+collection — **Directors, Benefits, Pets, Locations and Badges**. Add, edit,
+reorder and delete items, and **upload photos** for directors, pets and
+locations (or paste a URL). Uploads go to the Supabase Storage `media` bucket
+when connected (auto-created, public) or an in-preview data URL in demo mode.
+
 Prefer editing in code? `src/lib/seed.ts` holds the starting catalogue
 (missions, directors, benefits, pets, locations, badges) and is the seed for
 both modes.
@@ -148,9 +154,11 @@ both modes.
 ## 🧩 Notes & roadmap
 - Demo mode stores writes in server memory — great for previews, not durable.
   Connect Supabase for real persistence (missions persist to the `modules`
-  table, with `content` stored as JSONB).
-- The directors / benefits / pets / locations *collections* are edited in
-  `seed.ts` today; per-item admin CRUD for those lists is a natural next step.
+  table with `content` as JSONB; directors/benefits/pets/locations/badges to
+  their own tables; uploaded media to the `media` storage bucket).
+- Media uploads use the Supabase **service-role** key server-side, so no extra
+  storage RLS policies are required; the `media` bucket is created public for
+  reads on first upload.
 
 ---
 © PossAbilities CIC — Live The Life You Choose.

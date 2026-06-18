@@ -6,8 +6,8 @@ import { Icon } from "@/components/ui/Icon";
 import { getDirectors } from "@/lib/data";
 import type { ModuleViewProps } from "../types";
 
-export function DirectorsModule(props: ModuleViewProps) {
-  const directors = getDirectors();
+export async function DirectorsModule(props: ModuleViewProps) {
+  const directors = await getDirectors();
   return (
     <ModuleScaffold {...props}>
       <div className="rounded-lg bg-surface-container-low p-5">

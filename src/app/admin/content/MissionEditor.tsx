@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Chip } from "@/components/ui/Chip";
 import { clsx } from "@/lib/cn";
 import { ContentBlockEditor } from "./ContentBlockEditor";
+import { MediaUpload } from "@/components/admin/MediaUpload";
 import {
   createModuleAction,
   deleteModuleAction,
@@ -30,6 +31,8 @@ const KIND_OPTIONS: { value: ModuleKind; label: string }[] = [
 const clone = (m: Module): Module => JSON.parse(JSON.stringify(m));
 const isDirty = (a: Module, b: Module) =>
   JSON.stringify(a) !== JSON.stringify(b);
+const isVideo = (url: string | null) =>
+  !!url && (/\.(mp4|webm|mov)(\?|$)/i.test(url) || url.startsWith("data:video"));
 
 export function MissionEditor({
   modules: initial,
@@ -294,26 +297,24 @@ export function MissionEditor({
               </Field>
             </div>
 
-            <Field label="Hero media URL (native .mp4 video or image)">
-              <div className="flex items-center gap-2 rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low px-3 py-2.5">
-                <Icon name="cloud_upload" className="text-secondary" />
-                <input
-                  value={draft.heroMediaUrl ?? ""}
-                  onChange={(e) => set("heroMediaUrl", e.target.value || null)}
-                  placeholder="https://…/welcome.mp4"
-                  className="w-full bg-transparent text-sm text-on-surface outline-none"
+            <div className="rounded-lg bg-surface-container-low p-4">
+              <MediaUpload
+                label="Hero media (welcome video or image)"
+                value={draft.heroMediaUrl}
+                onChange={(url) => set("heroMediaUrl", url)}
+                accept="image/*,video/mp4,video/webm"
+                kind={isVideo(draft.heroMediaUrl) ? "video" : "image"}
+              />
+              <div className="mt-4">
+                <MediaUpload
+                  label="Poster image (shown before a video plays)"
+                  value={draft.heroPoster}
+                  onChange={(url) => set("heroPoster", url)}
+                  accept="image/*"
+                  kind="image"
                 />
               </div>
-            </Field>
-
-            <Field label="Hero poster image URL (optional)">
-              <input
-                value={draft.heroPoster ?? ""}
-                onChange={(e) => set("heroPoster", e.target.value || null)}
-                placeholder="https://…/poster.jpg"
-                className="field-focus w-full rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface"
-              />
-            </Field>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Estimated time (mins)">

@@ -8,7 +8,7 @@ import { ContentBlocks } from "./ContentBlocks";
 import { getBadges } from "@/lib/data";
 import type { Module } from "@/lib/types";
 
-export function ModuleScaffold({
+export async function ModuleScaffold({
   module,
   alreadyCompleted,
   prevSlug,
@@ -25,8 +25,9 @@ export function ModuleScaffold({
   hero?: ReactNode;
   children: ReactNode;
 }) {
+  const badges = module.badgeId ? await getBadges() : [];
   const badgeName = module.badgeId
-    ? getBadges().find((b) => b.id === module.badgeId)?.name
+    ? badges.find((b) => b.id === module.badgeId)?.name
     : null;
 
   return (

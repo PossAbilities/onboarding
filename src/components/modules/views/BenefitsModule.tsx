@@ -12,8 +12,8 @@ const STATS = [
   { figure: "£500", label: "Up to, for your BIG Idea", icon: "emoji_objects" },
 ];
 
-export function BenefitsModule(props: ModuleViewProps) {
-  const benefits = getBenefits();
+export async function BenefitsModule(props: ModuleViewProps) {
+  const benefits = await getBenefits();
 
   // Group benefits by category, preserving first-seen order.
   const categories: { name: string; items: Benefit[] }[] = [];

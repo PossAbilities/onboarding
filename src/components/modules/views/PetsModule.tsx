@@ -25,8 +25,8 @@ const WELLBEING = [
   },
 ];
 
-export function PetsModule(props: ModuleViewProps) {
-  const pets = getPets();
+export async function PetsModule(props: ModuleViewProps) {
+  const pets = await getPets();
 
   return (
     <ModuleScaffold {...props}>

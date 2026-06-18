@@ -3,22 +3,23 @@ import { isSupabaseConfigured } from "./config";
 import { createSupabaseServerClient } from "./supabase/server";
 import { computeJourney } from "./journey";
 import { demoState } from "./demo-store";
-import {
-  BADGES,
-  BENEFITS,
-  DIRECTORS,
-  LOCATIONS,
-  MODULES,
-  PETS,
-} from "./seed";
+import { MODULES } from "./seed";
 import type {
+  Badge,
+  Benefit,
+  CollectionName,
+  Director,
   Idea,
   IdeaStatus,
   JourneyState,
+  Location,
   Module,
   ModuleProgress,
+  Pet,
   Profile,
 } from "./types";
+
+export type { CollectionName };
 
 /* ───────────────────────── Mission catalogue ──────────────────────
  * Missions are fully editable via the admin Content Editor. In DEMO MODE they
@@ -120,13 +121,91 @@ export async function reorderModules(orderedIds: string[]): Promise<void> {
   );
 }
 
-export const getDirectors = () =>
-  [...DIRECTORS].sort((a, b) => a.order - b.order);
-export const getBenefits = () =>
-  [...BENEFITS].sort((a, b) => a.order - b.order);
-export const getBadges = () => BADGES;
-export const getPets = () => PETS;
-export const getLocations = () => LOCATIONS;
+/* ─────────────────────── Content collections ──────────────────────
+ * Directors / benefits / pets / locations / badges. Fully editable from the
+ * admin Content Library — mutable in-memory in demo mode, Supabase tables when
+ * configured.
+ */
+export async function getDirectors(): Promise<Director[]> {
+  if (!isSupabaseConfigured) return [...demoState().directors].sort(byOrder);
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("directors").select("*").order("order");
+  return (data ?? []).map(mapDirectorRow);
+}
+export async function getBenefits(): Promise<Benefit[]> {
+  if (!isSupabaseConfigured) return [...demoState().benefits].sort(byOrder);
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("benefits").select("*").order("order");
+  return (data ?? []).map(mapBenefitRow);
+}
+export async function getPets(): Promise<Pet[]> {
+  if (!isSupabaseConfigured) return [...demoState().pets];
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("pets").select("*");
+  return (data ?? []).map(mapPetRow);
+}
+export async function getLocations(): Promise<Location[]> {
+  if (!isSupabaseConfigured) return [...demoState().locations];
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("locations").select("*");
+  return (data ?? []).map(mapLocationRow);
+}
+export async function getBadges(): Promise<Badge[]> {
+  if (!isSupabaseConfigured) return [...demoState().badges];
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("badges").select("*");
+  return (data ?? []).map(mapBadgeRow);
+}
+
+/** Create or update one item in a content collection. */
+export async function saveCollectionItem(
+  name: CollectionName,
+  item: Record<string, unknown>,
+): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const arr = demoState()[name] as unknown as Record<string, unknown>[];
+    const i = arr.findIndex((x) => x.id === item.id);
+    if (i >= 0) arr[i] = { ...arr[i], ...item };
+    else arr.push(item);
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from(name).upsert(collectionToRow(name, item), { onConflict: "id" });
+}
+
+export async function deleteCollectionItem(
+  name: CollectionName,
+  id: string,
+): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const state = demoState() as unknown as Record<string, { id: string }[]>;
+    state[name] = state[name].filter((x) => x.id !== id);
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from(name).delete().eq("id", id);
+}
+
+/** Reorder collections that have an `order` field (directors, benefits). */
+export async function reorderCollection(
+  name: CollectionName,
+  ids: string[],
+): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const arr = demoState()[name] as unknown as { id: string; order?: number }[];
+    ids.forEach((id, i) => {
+      const item = arr.find((x) => x.id === id);
+      if (item) item.order = i + 1;
+    });
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await Promise.all(
+    ids.map((id, i) => supabase.from(name).update({ order: i + 1 }).eq("id", id)),
+  );
+}
+
+const byOrder = (a: { order: number }, b: { order: number }) => a.order - b.order;
 
 /* ───────────────────────── Journey / progress ───────────────────── */
 
@@ -152,15 +231,18 @@ export async function getJourneyState(profile: Profile): Promise<JourneyState> {
   const modules = await getModules();
   const { progress, percentComplete } = computeJourney(records, modules);
 
-  const earnedBadges = isSupabaseConfigured
-    ? await getEarnedBadgesFromDb(profile.id)
-    : demoState().earnedBadges;
+  const [earnedBadges, badges] = await Promise.all([
+    isSupabaseConfigured
+      ? getEarnedBadgesFromDb(profile.id)
+      : Promise.resolve(demoState().earnedBadges),
+    getBadges(),
+  ]);
 
   return {
     profile,
     modules,
     progress,
-    badges: BADGES,
+    badges,
     earnedBadges,
     percentComplete,
   };
@@ -520,6 +602,115 @@ function moduleToRow(m: Module): Record<string, unknown> {
     hero_poster: m.heroPoster,
     content: m.content,
   };
+}
+
+function mapDirectorRow(r: any): Director {
+  return {
+    id: r.id,
+    name: r.name,
+    role: r.role ?? "",
+    bio: r.bio ?? "",
+    photoUrl: r.photo_url ?? "",
+    videoUrl: r.video_url ?? null,
+    order: r.order ?? 0,
+  };
+}
+function mapBenefitRow(r: any): Benefit {
+  return {
+    id: r.id,
+    category: r.category ?? "",
+    title: r.title,
+    description: r.description ?? "",
+    icon: r.icon ?? "star",
+    order: r.order ?? 0,
+    highlight: r.highlight ?? false,
+  };
+}
+function mapPetRow(r: any): Pet {
+  return {
+    id: r.id,
+    name: r.name,
+    species: r.species ?? "",
+    owner: r.owner ?? "",
+    photoUrl: r.photo_url ?? "",
+    funFact: r.fun_fact ?? "",
+  };
+}
+function mapLocationRow(r: any): Location {
+  return {
+    id: r.id,
+    name: r.name,
+    region: r.region ?? "",
+    description: r.description ?? "",
+    imageUrl: r.image_url ?? "",
+    services: Array.isArray(r.services) ? r.services : [],
+  };
+}
+function mapBadgeRow(r: any): Badge {
+  return {
+    id: r.id,
+    name: r.name,
+    description: r.description ?? "",
+    icon: r.icon ?? "star",
+    xp: r.xp ?? 0,
+    criteria: r.criteria ?? "",
+  };
+}
+
+/** Map an editor item (camelCase) to a Supabase row (snake_case) per collection. */
+function collectionToRow(
+  name: CollectionName,
+  item: Record<string, any>,
+): Record<string, unknown> {
+  switch (name) {
+    case "directors":
+      return {
+        id: item.id,
+        name: item.name,
+        role: item.role,
+        bio: item.bio,
+        photo_url: item.photoUrl,
+        video_url: item.videoUrl ?? null,
+        order: item.order ?? 0,
+      };
+    case "benefits":
+      return {
+        id: item.id,
+        category: item.category,
+        title: item.title,
+        description: item.description,
+        icon: item.icon,
+        order: item.order ?? 0,
+        highlight: item.highlight ?? false,
+      };
+    case "pets":
+      return {
+        id: item.id,
+        name: item.name,
+        species: item.species,
+        owner: item.owner,
+        photo_url: item.photoUrl,
+        fun_fact: item.funFact,
+      };
+    case "locations":
+      return {
+        id: item.id,
+        name: item.name,
+        region: item.region,
+        description: item.description,
+        image_url: item.imageUrl,
+        services: Array.isArray(item.services) ? item.services : [],
+      };
+    case "badges":
+      return {
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        icon: item.icon,
+        xp: item.xp ?? 0,
+        criteria: item.criteria,
+      };
+  }
 }
 
 function mapIdeaRow(row: any): Idea {

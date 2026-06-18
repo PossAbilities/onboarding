@@ -8,15 +8,16 @@ import type { CertificateViewProps } from "../types";
 
 const VALUES = ["Passion", "Person Centred", "Integrity", "Creativity", "Happiness"];
 
-export function CertificateModule(props: CertificateViewProps) {
+export async function CertificateModule(props: CertificateViewProps) {
   const { module, profile, journey, alreadyCompleted } = props;
   const finished = journey.percentComplete >= 100 || alreadyCompleted;
   const serial = `PA-${new Date().getFullYear()}-${profile.id
     .replace(/[^a-z0-9]/gi, "")
     .slice(0, 4)
     .toUpperCase()}`;
+  const badges = module.badgeId ? await getBadges() : [];
   const badgeName = module.badgeId
-    ? getBadges().find((b) => b.id === module.badgeId)?.name
+    ? badges.find((b) => b.id === module.badgeId)?.name
     : null;
 
   return (

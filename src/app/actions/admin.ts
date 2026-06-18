@@ -5,10 +5,14 @@ import { requireAdmin } from "@/lib/auth";
 import {
   bulkInvite,
   createModule,
+  deleteCollectionItem,
   deleteModule,
   inviteStarter,
+  reorderCollection,
   reorderModules,
+  saveCollectionItem,
   saveModule,
+  type CollectionName,
 } from "@/lib/data";
 import type { Module } from "@/lib/types";
 
@@ -93,6 +97,45 @@ export async function reorderModulesAction(orderedIds: string[]): Promise<void> 
   await requireAdmin();
   await reorderModules(orderedIds);
   revalidateContent();
+}
+
+/* ───────────────── Content Library (directors / benefits / pets / … ) ───── */
+
+function revalidateLibrary() {
+  revalidatePath("/admin/library");
+  revalidatePath("/journey");
+  revalidatePath("/badges");
+  revalidatePath("/modules", "layout");
+}
+
+export async function saveCollectionItemAction(
+  name: CollectionName,
+  item: Record<string, unknown>,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  if (!item?.id) return { ok: false, message: "Missing item id." };
+  await saveCollectionItem(name, item);
+  revalidateLibrary();
+  return { ok: true, message: "Saved." };
+}
+
+export async function deleteCollectionItemAction(
+  name: CollectionName,
+  id: string,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  await deleteCollectionItem(name, id);
+  revalidateLibrary();
+  return { ok: true, message: "Deleted." };
+}
+
+export async function reorderCollectionAction(
+  name: CollectionName,
+  ids: string[],
+): Promise<void> {
+  await requireAdmin();
+  await reorderCollection(name, ids);
+  revalidateLibrary();
 }
 
 /** Bulk import from pasted CSV: `name,email,role` per line (header optional). */

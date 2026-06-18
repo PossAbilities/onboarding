@@ -147,6 +147,13 @@ export interface Invite {
   createdAt: string;
 }
 
+export type CollectionName =
+  | "directors"
+  | "benefits"
+  | "pets"
+  | "locations"
+  | "badges";
+
 /** Aggregated journey state for the signed-in employee. */
 export interface JourneyState {
   profile: Profile;
