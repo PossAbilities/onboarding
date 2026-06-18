@@ -74,10 +74,10 @@
   /* Typography */
   --font-display: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
   --font-sans: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
-  /* Brand logotype — Avenir Heavy where the device has it (e.g. Apple),
-     otherwise the closest heavy fallback. Used for the PossAbilities wordmark. */
-  --font-avenir: "Avenir Heavy", "AvenirNext-Heavy", "Avenir Next Heavy",
-    "Avenir Next", "Avenir", var(--font-montserrat), system-ui, sans-serif;
+  /* Brand logotype — Avenir ExtraBold where the device has it, otherwise the
+     closest extra-bold fallback. Used for the PossAbilities wordmark (weight 800). */
+  --font-avenir: "Avenir ExtraBold", "AvenirNext-ExtraBold", "Avenir Next",
+    "Avenir", var(--font-montserrat), system-ui, sans-serif;
 
   /* Radii — friendly, "squishy" */
   --radius-sm: 0.25rem;

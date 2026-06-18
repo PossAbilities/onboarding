@@ -191,7 +191,7 @@ export function EmailEditor({ templates: initial }: { templates: EmailTemplate[]
 
       {/* Editor + preview */}
       {draft ? (
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="flex flex-col gap-6">
           {/* Editor */}
           <div className="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 journey-card-shadow">
             <div className="mb-4 flex items-center justify-between gap-2">
@@ -372,13 +372,14 @@ export function EmailEditor({ templates: initial }: { templates: EmailTemplate[]
               <p className="font-bold text-on-surface">{previewSubject}</p>
             </div>
 
-            <div className="mt-3 flex justify-center overflow-hidden rounded-lg bg-surface-container-highest p-3">
+            <div className="mt-3 flex justify-center overflow-x-auto rounded-lg bg-surface-container-highest p-3">
               <iframe
+                key={device}
                 title="Email preview"
                 sandbox=""
                 srcDoc={previewHtml}
-                className="h-[520px] rounded-md border border-outline-variant/50 bg-white transition-all"
-                style={{ width: device === "mobile" ? 380 : "100%" }}
+                className="h-[600px] shrink-0 rounded-md border border-outline-variant/50 bg-white shadow-md transition-all"
+                style={{ width: device === "mobile" ? 375 : 600 }}
               />
             </div>
             <p className="mt-2 text-xs text-on-surface-variant">
