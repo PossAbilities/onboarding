@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireProfile } from "@/lib/auth";
 import {
+  addCredential,
   addNotification,
   collectEasterEgg,
   completeModule,
+  deleteCredential,
   getBadges,
   getDocuments,
   getModuleById,
@@ -138,6 +140,34 @@ export async function signDocumentAction(
     signed_at: new Date().toISOString(),
   });
   return { ok: true as const };
+}
+
+export async function addCredentialAction(input: {
+  platform: string;
+  username: string;
+  secret: string;
+  url?: string;
+  notes?: string;
+}): Promise<{ ok: boolean; message: string }> {
+  const profile = await requireProfile();
+  if (!input.platform?.trim() || !input.secret?.trim()) {
+    return { ok: false, message: "Platform and password are required." };
+  }
+  const res = await addCredential(profile, {
+    platform: input.platform.trim(),
+    username: input.username?.trim() ?? "",
+    secret: input.secret,
+    url: input.url?.trim(),
+    notes: input.notes?.trim(),
+  });
+  revalidatePath("/my-logins");
+  return res;
+}
+
+export async function deleteCredentialAction(id: string) {
+  const profile = await requireProfile();
+  await deleteCredential(profile, id);
+  revalidatePath("/my-logins");
 }
 
 export async function markNotificationReadAction(id: string) {

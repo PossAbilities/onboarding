@@ -10,6 +10,7 @@ import type {
   AppNotification,
   CollectionName,
   CompanyValue,
+  Credential,
   Director,
   EmailTemplate,
   Idea,
@@ -269,6 +270,111 @@ export async function saveOffices(list: string[]): Promise<void> {
       { key: "offices", value: clean, updated_at: new Date().toISOString() },
       { onConflict: "key" },
     );
+}
+
+/* ─────────────────── Credential vault (encrypted) ─────────────────── */
+
+const VAULT_DAYS = 30;
+
+function vaultExpiry(profile: Profile): string {
+  const base = profile.startedAt ? new Date(profile.startedAt) : new Date();
+  return new Date(base.getTime() + VAULT_DAYS * 86400000).toISOString();
+}
+
+export async function listMyCredentials(profile: Profile): Promise<Credential[]> {
+  const nowMs = Date.now();
+  if (!isSupabaseConfigured) {
+    return demoState()
+      .credentials.filter((c) => !c.expiresAt || new Date(c.expiresAt).getTime() > nowMs)
+      .sort((a, b) => a.platform.localeCompare(b.platform));
+  }
+  const { decryptSecret } = await import("./crypto");
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("user_credentials")
+    .select("*")
+    .eq("user_id", profile.id)
+    .order("platform");
+  return (data ?? [])
+    .filter((r) => !r.expires_at || new Date(r.expires_at).getTime() > nowMs)
+    .map((r) => ({
+      id: r.id,
+      platform: r.platform,
+      username: r.username ?? "",
+      secret: decryptSecret(r.secret_enc),
+      url: r.url ?? null,
+      notes: r.notes ?? null,
+      expiresAt: r.expires_at ?? null,
+      createdAt: r.created_at,
+    }));
+}
+
+export async function addCredential(
+  profile: Profile,
+  input: { platform: string; username: string; secret: string; url?: string; notes?: string },
+): Promise<{ ok: boolean; message: string }> {
+  const expiresAt = vaultExpiry(profile);
+  if (!isSupabaseConfigured) {
+    demoState().credentials.push({
+      id: `cred-${Date.now()}`,
+      platform: input.platform,
+      username: input.username,
+      secret: input.secret,
+      url: input.url ?? null,
+      notes: input.notes ?? null,
+      expiresAt,
+      createdAt: new Date().toISOString(),
+    });
+    return { ok: true, message: "Saved." };
+  }
+  const { encryptSecret, isVaultConfigured } = await import("./crypto");
+  if (!isVaultConfigured()) {
+    return { ok: false, message: "Secure vault is not configured (missing CREDENTIALS_KEY)." };
+  }
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("user_credentials").insert({
+    user_id: profile.id,
+    platform: input.platform,
+    username: input.username,
+    secret_enc: encryptSecret(input.secret),
+    url: input.url || null,
+    notes: input.notes || null,
+    expires_at: expiresAt,
+  });
+  return error
+    ? { ok: false, message: error.message }
+    : { ok: true, message: "Saved securely." };
+}
+
+export async function deleteCredential(profile: Profile, id: string): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const s = demoState();
+    s.credentials = s.credentials.filter((c) => c.id !== id);
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("user_credentials").delete().eq("id", id).eq("user_id", profile.id);
+}
+
+/** Cron: permanently delete credentials past their 30-day expiry. */
+export async function purgeExpiredCredentials(): Promise<number> {
+  if (!isSupabaseConfigured) {
+    const s = demoState();
+    const before = s.credentials.length;
+    const now = Date.now();
+    s.credentials = s.credentials.filter(
+      (c) => !c.expiresAt || new Date(c.expiresAt).getTime() > now,
+    );
+    return before - s.credentials.length;
+  }
+  const { createSupabaseAdminClient } = await import("./supabase/admin");
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from("user_credentials")
+    .delete()
+    .lt("expires_at", new Date().toISOString())
+    .select("id");
+  return data?.length ?? 0;
 }
 
 /* ───────────────────────── Notifications ─────────────────────────── */

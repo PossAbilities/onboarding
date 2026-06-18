@@ -177,6 +177,19 @@ create table if not exists public.notifications (
   created_at timestamptz not null default now()
 );
 
+-- Encrypted credential vault (app-encrypted secrets, owner-only).
+create table if not exists public.user_credentials (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  platform text not null,
+  username text,
+  secret_enc text,
+  url text,
+  notes text,
+  expires_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.ideas (
   id uuid primary key default gen_random_uuid(),
   author_id uuid references public.profiles (id) on delete set null,

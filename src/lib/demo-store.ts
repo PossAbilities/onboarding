@@ -19,6 +19,7 @@ import type {
   AppNotification,
   Badge,
   Benefit,
+  Credential,
   CompanyValue,
   Director,
   DocumentSignature,
@@ -77,6 +78,7 @@ interface DemoState {
   inboundEvents: InboundEvent[];
   offices: string[];
   notifications: AppNotification[]; // the demo employee's notifications
+  credentials: Credential[]; // the demo employee's saved logins (plain in demo)
 }
 
 function seedState(): DemoState {
@@ -155,6 +157,7 @@ function seedState(): DemoState {
         createdAt: "2026-06-12T10:00:00Z",
       },
     ],
+    credentials: [],
   };
 }
 

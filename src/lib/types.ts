@@ -232,6 +232,18 @@ export interface IntegrationDelivery {
   createdAt: string;
 }
 
+/** A starter's saved sign-in for one of their platforms (encrypted at rest). */
+export interface Credential {
+  id: string;
+  platform: string;
+  username: string;
+  secret: string; // decrypted only when returned to the owner
+  url: string | null;
+  notes: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
 export interface AppNotification {
   id: string;
   title: string;

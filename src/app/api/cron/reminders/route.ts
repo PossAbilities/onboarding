@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { sendStalledReminders } from "@/lib/mailer";
+import { purgeExpiredCredentials } from "@/lib/data";
 
 // This endpoint is invoked by the daily Netlify scheduled function. It is
 // protected by CRON_SECRET — without a matching secret it refuses to run.
@@ -19,7 +20,14 @@ async function run(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const result = await sendStalledReminders();
-  return NextResponse.json(result, { status: result.ok ? 200 : 200 });
+  // Daily housekeeping: purge expired credential-vault entries (30 days post-start).
+  let purgedCredentials = 0;
+  try {
+    purgedCredentials = await purgeExpiredCredentials();
+  } catch {
+    /* best-effort */
+  }
+  return NextResponse.json({ ...result, purgedCredentials }, { status: 200 });
 }
 
 export async function GET(request: NextRequest) {

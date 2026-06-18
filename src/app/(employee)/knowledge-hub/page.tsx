@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { Icon } from "@/components/ui/Icon";
 import { Chip } from "@/components/ui/Chip";
@@ -51,6 +52,23 @@ export default async function KnowledgeHubPage() {
           className="field-focus w-full rounded-lg bg-transparent py-2 text-on-surface outline-none"
         />
       </div>
+
+      <Link
+        href="/my-logins"
+        className="mt-6 flex items-center gap-4 rounded-xl border border-secondary/30 bg-secondary-fixed/30 p-4 journey-card-hover"
+      >
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl gradient-purple-pink text-on-primary">
+          <Icon name="vpn_key" fill size={24} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-extrabold text-on-surface">My Logins (secure)</p>
+          <p className="text-sm text-on-surface-variant">
+            Safely store your sign-ins for the systems you use while you get set
+            up — encrypted, private, and auto-deleted after 30 days.
+          </p>
+        </div>
+        <Icon name="arrow_forward" className="text-on-surface-variant" />
+      </Link>
 
       {RESOURCES.map((section) => (
         <section key={section.group} className="mt-8">
