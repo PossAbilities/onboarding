@@ -213,3 +213,18 @@ drop policy if exists "ideas_insert" on public.ideas;
 create policy "ideas_insert" on public.ideas for insert with check (auth.uid() = author_id);
 drop policy if exists "ideas_update" on public.ideas;
 create policy "ideas_update" on public.ideas for update using (auth.role() = 'authenticated');
+
+-- Content tables: any signed-in user can READ; only admins can WRITE.
+-- (The cron/invite paths use the service-role key, which bypasses RLS.)
+do $$
+declare t text;
+begin
+  foreach t in array array['modules','directors','benefits','badges','pets','locations','company_values','email_templates']
+  loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists "%s_read" on public.%I', t, t);
+    execute format('create policy "%s_read" on public.%I for select using (auth.role() = ''authenticated'')', t, t);
+    execute format('drop policy if exists "%s_write" on public.%I', t, t);
+    execute format('create policy "%s_write" on public.%I for all using (public.is_admin()) with check (public.is_admin())', t, t);
+  end loop;
+end $$;
