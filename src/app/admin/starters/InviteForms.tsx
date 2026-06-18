@@ -7,7 +7,6 @@ import {
   type InviteState,
 } from "@/app/actions/admin";
 import { Icon } from "@/components/ui/Icon";
-import { ROLE_TAGS, DEPARTMENTS } from "@/lib/seed";
 
 export interface ManagerOption {
   id: string;
@@ -31,7 +30,15 @@ function Notice({ state }: { state: InviteState }) {
   );
 }
 
-export function InviteStarterForm({ managers }: { managers: ManagerOption[] }) {
+export function InviteStarterForm({
+  managers,
+  roles,
+  departments,
+}: {
+  managers: ManagerOption[];
+  roles: string[];
+  departments: string[];
+}) {
   const [state, action, pending] = useActionState<InviteState, FormData>(
     inviteStarterAction,
     undefined,
@@ -70,7 +77,7 @@ export function InviteStarterForm({ managers }: { managers: ManagerOption[] }) {
             name="roleTag"
             className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
           >
-            {ROLE_TAGS.map((r) => (
+            {roles.map((r) => (
               <option key={r}>{r}</option>
             ))}
           </select>
@@ -81,7 +88,7 @@ export function InviteStarterForm({ managers }: { managers: ManagerOption[] }) {
             name="department"
             className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
           >
-            {DEPARTMENTS.map((d) => (
+            {departments.map((d) => (
               <option key={d}>{d}</option>
             ))}
           </select>

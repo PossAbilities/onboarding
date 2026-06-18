@@ -17,8 +17,10 @@ import {
   saveCollectionItem,
   saveDocument,
   saveEmailTemplate,
+  saveDepartments,
   saveModule,
   saveOffices,
+  saveRoles,
   updateStarter,
   type CollectionName,
 } from "@/lib/data";
@@ -292,6 +294,26 @@ export async function saveOfficesAction(
   revalidatePath("/admin/settings");
   revalidatePath("/modules", "layout");
   return { ok: true, message: "Offices saved." };
+}
+
+export async function saveRolesAction(
+  list: string[],
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  await saveRoles(list);
+  revalidatePath("/admin/settings");
+  revalidatePath("/admin/starters");
+  return { ok: true, message: "Job roles saved." };
+}
+
+export async function saveDepartmentsAction(
+  list: string[],
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  await saveDepartments(list);
+  revalidatePath("/admin/settings");
+  revalidatePath("/admin/starters");
+  return { ok: true, message: "Departments saved." };
 }
 
 /* ───────────────────── Inbound API keys ──────────────────────────── */

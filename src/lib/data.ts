@@ -3,7 +3,13 @@ import { isSupabaseConfigured } from "./config";
 import { createSupabaseServerClient } from "./supabase/server";
 import { computeJourney } from "./journey";
 import { demoState } from "./demo-store";
-import { EMAIL_TEMPLATES, MODULES } from "./seed";
+import {
+  DEPARTMENTS,
+  EMAIL_TEMPLATES,
+  MODULES,
+  OFFICES,
+  ROLE_TAGS,
+} from "./seed";
 import type {
   Badge,
   Benefit,
@@ -244,32 +250,63 @@ export async function reorderCollection(
 
 const byOrder = (a: { order: number }, b: { order: number }) => a.order - b.order;
 
-/* ───────────────────── Offices (ID-badge form) ───────────────────── */
+/* ─────────────── Editable list settings (offices/roles/depts) ────── */
 
-export async function getOffices(): Promise<string[]> {
-  if (!isSupabaseConfigured) return [...demoState().offices];
+async function readListSetting(key: string, fallback: string[]): Promise<string[]> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("app_settings")
     .select("value")
-    .eq("key", "offices")
+    .eq("key", key)
     .maybeSingle();
-  return Array.isArray(data?.value) ? (data!.value as string[]) : [];
+  const v = data?.value;
+  return Array.isArray(v) && v.length ? (v as string[]) : fallback;
 }
 
-export async function saveOffices(list: string[]): Promise<void> {
-  const clean = list.map((s) => s.trim()).filter(Boolean);
-  if (!isSupabaseConfigured) {
-    demoState().offices = clean;
-    return;
-  }
+async function writeListSetting(key: string, list: string[]): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase
     .from("app_settings")
     .upsert(
-      { key: "offices", value: clean, updated_at: new Date().toISOString() },
+      { key, value: list, updated_at: new Date().toISOString() },
       { onConflict: "key" },
     );
+}
+
+const cleanList = (list: string[]) => list.map((s) => s.trim()).filter(Boolean);
+
+export async function getOffices(): Promise<string[]> {
+  if (!isSupabaseConfigured) return [...demoState().offices];
+  return readListSetting("offices", OFFICES);
+}
+export async function saveOffices(list: string[]): Promise<void> {
+  const clean = cleanList(list);
+  if (!isSupabaseConfigured) return void (demoState().offices = clean);
+  await writeListSetting("offices", clean);
+}
+
+export async function getRoles(): Promise<string[]> {
+  if (!isSupabaseConfigured) {
+    return demoState().roles.length ? demoState().roles : ROLE_TAGS;
+  }
+  return readListSetting("roles", ROLE_TAGS);
+}
+export async function saveRoles(list: string[]): Promise<void> {
+  const clean = cleanList(list);
+  if (!isSupabaseConfigured) return void (demoState().roles = clean);
+  await writeListSetting("roles", clean);
+}
+
+export async function getDepartments(): Promise<string[]> {
+  if (!isSupabaseConfigured) {
+    return demoState().departments.length ? demoState().departments : DEPARTMENTS;
+  }
+  return readListSetting("departments", DEPARTMENTS);
+}
+export async function saveDepartments(list: string[]): Promise<void> {
+  const clean = cleanList(list);
+  if (!isSupabaseConfigured) return void (demoState().departments = clean);
+  await writeListSetting("departments", clean);
 }
 
 /* ─────────────────── Credential vault (encrypted) ─────────────────── */

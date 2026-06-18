@@ -7,10 +7,12 @@ import {
   IDEAS,
   INTEGRATIONS,
   LOCATIONS,
+  DEPARTMENTS,
   MANAGERS,
   MODULES,
   OFFICES,
   PETS,
+  ROLE_TAGS,
   SIGN_DOCUMENTS,
   VALUES,
 } from "./seed";
@@ -77,6 +79,8 @@ interface DemoState {
   apiKeys: ApiKey[];
   inboundEvents: InboundEvent[];
   offices: string[];
+  roles: string[];
+  departments: string[];
   notifications: AppNotification[]; // the demo employee's notifications
   credentials: Credential[]; // the demo employee's saved logins (plain in demo)
 }
@@ -137,6 +141,8 @@ function seedState(): DemoState {
     apiKeys: [],
     inboundEvents: [],
     offices: [...OFFICES],
+    roles: [...ROLE_TAGS],
+    departments: [...DEPARTMENTS],
     notifications: [
       {
         id: "n-welcome",

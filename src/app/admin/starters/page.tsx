@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { getManagers, getStarters } from "@/lib/data";
+import {
+  getDepartments,
+  getManagers,
+  getRoles,
+  getStarters,
+} from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { Chip } from "@/components/ui/Chip";
 import { Icon } from "@/components/ui/Icon";
@@ -10,7 +15,12 @@ import { EditStarter } from "./EditStarter";
 export const metadata: Metadata = { title: "Admin · Manage Starters" };
 
 export default async function ManageStartersPage() {
-  const [starters, managers] = await Promise.all([getStarters(), getManagers()]);
+  const [starters, managers, roles, departments] = await Promise.all([
+    getStarters(),
+    getManagers(),
+    getRoles(),
+    getDepartments(),
+  ]);
   const managerOptions = managers.map((m) => ({
     id: m.id,
     name: m.name,
@@ -28,7 +38,11 @@ export default async function ManageStartersPage() {
       </p>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        <InviteStarterForm managers={managerOptions} />
+        <InviteStarterForm
+          managers={managerOptions}
+          roles={roles}
+          departments={departments}
+        />
         <BulkImportForm />
       </div>
 
@@ -116,6 +130,8 @@ export default async function ManageStartersPage() {
                         managerId: s.managerId,
                       }}
                       managers={managerOptions}
+                      roles={roles}
+                      departments={departments}
                     />
                   </td>
                 </tr>

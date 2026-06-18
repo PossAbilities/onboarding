@@ -4,12 +4,13 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { updateStarterAction } from "@/app/actions/admin";
-import { ROLE_TAGS, DEPARTMENTS } from "@/lib/seed";
 import type { ManagerOption } from "./InviteForms";
 
 export function EditStarter({
   starter,
   managers,
+  roles,
+  departments,
 }: {
   starter: {
     id: string;
@@ -19,6 +20,8 @@ export function EditStarter({
     managerId: string | null;
   };
   managers: ManagerOption[];
+  roles: string[];
+  departments: string[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -74,7 +77,7 @@ export function EditStarter({
                   onChange={(e) => setRoleTag(e.target.value)}
                   className="field-focus mt-1 w-full rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5"
                 >
-                  {ROLE_TAGS.map((r) => (
+                  {roles.map((r) => (
                     <option key={r}>{r}</option>
                   ))}
                 </select>
@@ -87,7 +90,7 @@ export function EditStarter({
                   className="field-focus mt-1 w-full rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5"
                 >
                   <option value="">—</option>
-                  {DEPARTMENTS.map((d) => (
+                  {departments.map((d) => (
                     <option key={d}>{d}</option>
                   ))}
                 </select>

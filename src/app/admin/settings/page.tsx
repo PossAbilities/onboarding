@@ -1,24 +1,56 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/config";
-import { getOffices } from "@/lib/data";
+import { getDepartments, getOffices, getRoles } from "@/lib/data";
+import {
+  saveDepartmentsAction,
+  saveOfficesAction,
+  saveRolesAction,
+} from "@/app/actions/admin";
 import { Icon } from "@/components/ui/Icon";
 import { Chip } from "@/components/ui/Chip";
-import { OfficesEditor } from "./OfficesEditor";
+import { ListSettingsEditor } from "./ListSettingsEditor";
 
 export const metadata: Metadata = { title: "Admin · System Config" };
 
 export default async function SettingsPage() {
-  const offices = await getOffices();
+  const [offices, roles, departments] = await Promise.all([
+    getOffices(),
+    getRoles(),
+    getDepartments(),
+  ]);
   return (
     <div className="mx-auto max-w-4xl">
       <h1 className="text-3xl font-black text-on-surface">System Config</h1>
       <p className="mt-1 text-on-surface-variant">
-        Branding, journey rules and integrations.
+        Lists, branding, journey rules and integrations.
       </p>
 
-      <div className="mt-6">
-        <OfficesEditor offices={offices} />
+      <div className="mt-6 grid gap-6">
+        <ListSettingsEditor
+          title="Job roles"
+          icon="badge"
+          description="The roles a starter can be assigned (invite & edit forms). One per line."
+          items={roles}
+          placeholder={"Support Worker\nManager\nVolunteer"}
+          saveAction={saveRolesAction}
+        />
+        <ListSettingsEditor
+          title="Departments"
+          icon="apartment"
+          description="The departments a starter can belong to. One per line."
+          items={departments}
+          placeholder={"Supported Living\nDay Services\nCommunity Outreach"}
+          saveAction={saveDepartmentsAction}
+        />
+        <ListSettingsEditor
+          title="Offices"
+          icon="location_city"
+          description="The offices a starter can pick as their nearest ID-badge collection point. One per line."
+          items={offices}
+          placeholder={"Rochdale (Head Office)\nHeywood\nMiddleton"}
+          saveAction={saveOfficesAction}
+        />
       </div>
 
       {/* Backend status */}
