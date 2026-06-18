@@ -13,6 +13,7 @@ import { BigIdeaModule } from "@/components/modules/views/BigIdeaModule";
 import { PetsModule } from "@/components/modules/views/PetsModule";
 import { LocationsModule } from "@/components/modules/views/LocationsModule";
 import { CertificateModule } from "@/components/modules/views/CertificateModule";
+import { ContentModule } from "@/components/modules/views/ContentModule";
 
 export async function generateMetadata({
   params,
@@ -75,7 +76,9 @@ export default async function ModulePage({
       return <LocationsModule {...common} />;
     case "certificate":
       return <CertificateModule {...common} journey={journey} />;
+    case "content":
+      return <ContentModule {...common} />;
     default:
-      return <BenefitsModule {...common} />;
+      return <ContentModule {...common} />;
   }
 }

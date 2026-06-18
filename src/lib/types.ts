@@ -55,9 +55,10 @@ export interface Manager {
 }
 
 export interface ContentBlock {
-  type: "heading" | "paragraph" | "list" | "quote" | "callout";
+  type: "heading" | "paragraph" | "list" | "quote" | "callout" | "gallery";
   text?: string;
   items?: string[];
+  images?: string[];
   author?: string;
 }
 
@@ -76,6 +77,7 @@ export interface Module {
   rewardXp: number;
   heroMediaUrl: string | null;
   heroPoster: string | null;
+  icon?: string | null; // optional Material Symbol override for the path node
   content: ContentBlock[];
 }
 
@@ -162,6 +164,24 @@ export interface Invite {
   status: "pending" | "accepted" | "expired";
   invitedBy: string;
   createdAt: string;
+}
+
+/** A document a starter must read and digitally sign (native e-sign). */
+export interface SignDocument {
+  id: string;
+  title: string;
+  description: string;
+  body: string | null; // rich text/HTML shown inline (if no file)
+  fileUrl: string | null; // uploaded PDF/image shown in a viewer
+  required: boolean;
+  order: number;
+}
+
+export interface DocumentSignature {
+  documentId: string;
+  signedName: string;
+  signatureData: string | null; // PNG data URL of the drawn signature
+  signedAt: string;
 }
 
 export type EmailTrigger = "welcome" | "reminder" | "completion" | "custom";

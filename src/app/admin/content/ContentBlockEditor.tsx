@@ -1,7 +1,9 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
 import { Icon } from "@/components/ui/Icon";
 import { clsx } from "@/lib/cn";
+import { MediaUpload } from "@/components/admin/MediaUpload";
 import type { ContentBlock } from "@/lib/types";
 
 const BLOCK_TYPES: { type: ContentBlock["type"]; label: string; icon: string }[] = [
@@ -10,6 +12,7 @@ const BLOCK_TYPES: { type: ContentBlock["type"]; label: string; icon: string }[]
   { type: "quote", label: "Quote", icon: "format_quote" },
   { type: "list", label: "Checklist", icon: "checklist" },
   { type: "callout", label: "Callout", icon: "lightbulb" },
+  { type: "gallery", label: "Image gallery", icon: "photo_library" },
 ];
 
 export function ContentBlockEditor({
@@ -36,9 +39,11 @@ export function ContentBlockEditor({
     const base: ContentBlock =
       type === "list"
         ? { type, items: ["New item"] }
-        : type === "quote"
-          ? { type, text: "A great quote.", author: "Name, Role" }
-          : { type, text: type === "heading" ? "New heading" : "New text." };
+        : type === "gallery"
+          ? { type, images: [] }
+          : type === "quote"
+            ? { type, text: "A great quote.", author: "Name, Role" }
+            : { type, text: type === "heading" ? "New heading" : "New text." };
     onChange([...blocks, base]);
   };
 
@@ -74,7 +79,12 @@ export function ContentBlockEditor({
               </div>
             </div>
 
-            {block.type === "list" ? (
+            {block.type === "gallery" ? (
+              <GalleryEditor
+                images={block.images ?? []}
+                onChange={(images) => update(i, { images })}
+              />
+            ) : block.type === "list" ? (
               <ListEditor
                 items={block.items ?? []}
                 onChange={(items) => update(i, { items })}
@@ -125,6 +135,50 @@ export function ContentBlockEditor({
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function GalleryEditor({
+  images,
+  onChange,
+}: {
+  images: string[];
+  onChange: (images: string[]) => void;
+}) {
+  return (
+    <div className="mt-2">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {images.map((src, i) => (
+          <div
+            key={i}
+            className="relative overflow-hidden rounded-lg border border-outline-variant/50"
+          >
+            <img src={src} alt="" className="aspect-square w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => onChange(images.filter((_, j) => j !== i))}
+              aria-label="Remove image"
+              className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-error text-on-error"
+            >
+              <Icon name="close" size={16} />
+            </button>
+          </div>
+        ))}
+        <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-outline-variant p-2">
+          <MediaUpload
+            value={null}
+            onChange={(url) => url && onChange([...images, url])}
+            accept="image/*"
+            kind="image"
+            shape="square"
+            label=""
+          />
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-on-surface-variant">
+        Upload images one at a time — they appear in the gallery above.
+      </p>
     </div>
   );
 }

@@ -23,7 +23,10 @@ insert into public.modules (id, slug, "order", level, kind, title, short_title, 
   ('m-bigidea','big-idea',7,7,'bigidea','Mission 07: The BIG Idea Portal','The BIG Idea','Got a better way to do things? We want to hear it!',6,false,'the-pioneer',100,null,'https://picsum.photos/seed/bigidea-hero/1200/675'),
   ('m-pets','very-important-pets',8,8,'pets','Mission 08: Very Important Pets','V.I.P. Wellbeing','Our furry teammates are a huge part of our culture.',4,false,null,60,null,'https://picsum.photos/seed/pets-hero/1200/675'),
   ('m-locations','locations',9,9,'locations','Mission 09: Locations & Services','Locations','Explore where we work and the services we deliver.',5,false,null,60,null,'https://picsum.photos/seed/locations-hero/1200/675'),
-  ('m-certificate','certificate',10,10,'certificate','Mission 10: Reach the Summit','Certificate','Finalise your induction and download your certificate.',3,true,'summit',300,null,'https://picsum.photos/seed/summit-hero/1200/675')
+  ('m-posscars','posscars',10,10,'content','Mission 10: The PossCars','The PossCars','Our very own annual staff awards.',5,false,null,60,null,'https://picsum.photos/seed/posscars-hero/1200/675'),
+  ('m-recognition','positive-recognition',11,11,'content','Mission 11: Positive Recognition','Positive Recognition','How we recognise and thank colleagues every day.',4,false,null,60,null,'https://picsum.photos/seed/recognition-hero/1200/675'),
+  ('m-welcome-close','welcome-to-possabilities',12,12,'content','Mission 12: Welcome to PossAbilities','Welcome to the Family','One last video welcoming you to the family.',3,true,null,100,'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4','https://picsum.photos/seed/welcome-close-hero/1200/675'),
+  ('m-certificate','certificate',13,13,'certificate','Mission 13: Reach the Summit','Certificate','Finalise your induction and download your certificate.',3,true,'summit',300,null,'https://picsum.photos/seed/summit-hero/1200/675')
 on conflict (id) do update set title = excluded.title, description = excluded.description, hero_media_url = excluded.hero_media_url, hero_poster = excluded.hero_poster;
 
 insert into public.directors (id, name, role, bio, photo_url, "order") values
@@ -61,6 +64,12 @@ insert into public.locations (id, name, region, description, image_url, services
   ('loc-3','Middleton Wellbeing Garden','Greater Manchester','A green space for horticulture therapy and our Very Important Pets.','https://picsum.photos/seed/loc-middleton/800/500','{"Horticulture","Wellbeing","Community"}'),
   ('loc-4','Bury Enterprise Café','Greater Manchester','A social enterprise café offering employment and training.','https://picsum.photos/seed/loc-bury/800/500','{"Enterprise","Employment","Café"}')
 on conflict (id) do update set name = excluded.name, description = excluded.description;
+
+insert into public.documents (id, title, description, body, required, "order") values
+  ('doc-handbook','Employee Handbook Acknowledgement','Confirm you have read and understood the PossAbilities Employee Handbook.','<p>I confirm that I have received, read and understood the PossAbilities Employee Handbook, including conduct, safeguarding, health &amp; safety and equality &amp; diversity.</p>',true,1),
+  ('doc-contract','Statement of Terms (Contract)','Review and sign your statement of main terms of employment.','<p>This document sets out the main terms of your employment with PossAbilities CIC.</p><p>By signing, you confirm the details are correct and you accept the terms.</p>',true,2),
+  ('doc-it','IT &amp; Acceptable Use Policy','Agree to our acceptable use policy for IT systems and data.','<p>I agree to use PossAbilities IT systems, devices and data responsibly and in line with our Acceptable Use and Data Protection policies.</p>',true,3)
+on conflict (id) do nothing;
 
 insert into public.company_values (id, label, icon, match, "order") values
   ('passionate','Remain Passionate','favorite','Dedicated to, and enthusiastic about, providing exceptional services.',1),

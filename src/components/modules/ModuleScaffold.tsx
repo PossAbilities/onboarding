@@ -23,7 +23,7 @@ export async function ModuleScaffold({
   nextSlug: string | null;
   stepLabel: string;
   hero?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const badges = module.badgeId ? await getBadges() : [];
   const badgeName = module.badgeId

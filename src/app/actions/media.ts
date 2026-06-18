@@ -27,8 +27,8 @@ export async function uploadMediaAction(
   if (file.size > MAX_BYTES) {
     return { error: "File is too large (max 12 MB). Try an optimised image." };
   }
-  if (!/^(image|video)\//.test(file.type)) {
-    return { error: "Only image or video files are allowed." };
+  if (!/^(image|video)\//.test(file.type) && file.type !== "application/pdf") {
+    return { error: "Only image, video or PDF files are allowed." };
   }
 
   if (!isSupabaseConfigured) {

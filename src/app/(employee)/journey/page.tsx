@@ -110,7 +110,7 @@ function PathRow({
       ? "lock"
       : active
         ? "rocket_launch"
-        : (KIND_ICON[module.kind] ?? "circle");
+        : (module.icon ?? KIND_ICON[module.kind] ?? "circle");
 
   return (
     <li className="relative flex gap-5">

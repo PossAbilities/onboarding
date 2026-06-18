@@ -15,6 +15,7 @@ const NAV: NavItem[] = [
   { href: "/milestones", label: "Milestones", icon: "flag" },
   { href: "/leaderboard", label: "Leaderboard", icon: "leaderboard" },
   { href: "/badges", label: "Badges", icon: "workspace_premium" },
+  { href: "/documents", label: "Documents", icon: "draw" },
   { href: "/knowledge-hub", label: "Knowledge Hub", icon: "menu_book" },
 ];
 

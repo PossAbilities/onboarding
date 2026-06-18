@@ -9,6 +9,7 @@ import {
   MANAGERS,
   MODULES,
   PETS,
+  SIGN_DOCUMENTS,
   VALUES,
 } from "./seed";
 import type {
@@ -16,6 +17,7 @@ import type {
   Benefit,
   CompanyValue,
   Director,
+  DocumentSignature,
   EmailTemplate,
   Idea,
   Invite,
@@ -25,6 +27,7 @@ import type {
   ModuleProgress,
   Pet,
   Profile,
+  SignDocument,
   UserBadge,
 } from "./types";
 
@@ -57,6 +60,8 @@ interface DemoState {
   emailTemplates: EmailTemplate[];
   // Demo employee's uploaded profile photo (overrides the seed avatar).
   employeeAvatarUrl: string | null;
+  documents: SignDocument[];
+  signatures: DocumentSignature[]; // the demo employee's signatures
 }
 
 function seedState(): DemoState {
@@ -104,6 +109,8 @@ function seedState(): DemoState {
     managers: MANAGERS.map((m) => ({ ...m })),
     emailTemplates: EMAIL_TEMPLATES.map((e) => ({ ...e })),
     employeeAvatarUrl: null,
+    documents: SIGN_DOCUMENTS.map((d) => ({ ...d })),
+    signatures: [],
   };
 }
 

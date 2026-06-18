@@ -38,6 +38,7 @@ create table if not exists public.modules (
   reward_xp integer default 0,
   hero_media_url text,
   hero_poster text,
+  icon text,
   content jsonb default '[]'::jsonb
 );
 
@@ -108,6 +109,26 @@ create table if not exists public.company_values (
   icon text default 'star',
   match text,
   "order" integer default 0
+);
+
+-- Documents starters must read and digitally sign.
+create table if not exists public.documents (
+  id text primary key,
+  title text not null,
+  description text,
+  body text,
+  file_url text,
+  required boolean default true,
+  "order" integer default 0
+);
+
+create table if not exists public.document_signatures (
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  document_id text not null,
+  signed_name text,
+  signature_data text,
+  signed_at timestamptz not null default now(),
+  primary key (user_id, document_id)
 );
 
 -- HTML email templates (with {{merge_tags}}) managed from the admin dashboard.
@@ -220,6 +241,15 @@ drop policy if exists "eggs_owner" on public.easter_eggs;
 create policy "eggs_owner" on public.easter_eggs for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- Document signatures: a user manages their own; admins can read all.
+alter table public.document_signatures enable row level security;
+drop policy if exists "sig_owner" on public.document_signatures;
+create policy "sig_owner" on public.document_signatures for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "sig_admin_read" on public.document_signatures;
+create policy "sig_admin_read" on public.document_signatures for select
+  using (public.is_admin());
+
 -- Ideas: everyone signed-in can read; authors can insert; anyone can vote (update votes).
 drop policy if exists "ideas_select" on public.ideas;
 create policy "ideas_select" on public.ideas for select using (auth.role() = 'authenticated');
@@ -233,7 +263,7 @@ create policy "ideas_update" on public.ideas for update using (auth.role() = 'au
 do $$
 declare t text;
 begin
-  foreach t in array array['modules','directors','managers','benefits','badges','pets','locations','company_values','email_templates']
+  foreach t in array array['modules','directors','managers','benefits','badges','pets','locations','company_values','email_templates','documents']
   loop
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "%s_read" on public.%I', t, t);

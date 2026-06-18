@@ -14,12 +14,14 @@ import type {
   Idea,
   IdeaStatus,
   JourneyState,
+  DocumentSignature,
   Location,
   Manager,
   Module,
   ModuleProgress,
   Pet,
   Profile,
+  SignDocument,
 } from "./types";
 
 export type { CollectionName };
@@ -239,6 +241,129 @@ export async function reorderCollection(
 }
 
 const byOrder = (a: { order: number }, b: { order: number }) => a.order - b.order;
+
+/* ───────────────────── Documents & e-signatures ──────────────────── */
+
+export async function getDocuments(): Promise<SignDocument[]> {
+  if (!isSupabaseConfigured) return [...demoState().documents].sort(byOrder);
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("documents").select("*").order("order");
+  return (data ?? []).map(mapDocumentRow);
+}
+
+export async function getMySignatures(
+  userId: string,
+): Promise<DocumentSignature[]> {
+  if (!isSupabaseConfigured) return demoState().signatures;
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("document_signatures")
+    .select("document_id,signed_name,signature_data,signed_at")
+    .eq("user_id", userId);
+  return (data ?? []).map((r) => ({
+    documentId: r.document_id,
+    signedName: r.signed_name,
+    signatureData: r.signature_data,
+    signedAt: r.signed_at,
+  }));
+}
+
+export async function signDocument(
+  profile: Profile,
+  documentId: string,
+  signedName: string,
+  signatureData: string | null,
+): Promise<void> {
+  const now = new Date().toISOString();
+  if (!isSupabaseConfigured) {
+    const sigs = demoState().signatures;
+    const existing = sigs.find((s) => s.documentId === documentId);
+    if (existing) {
+      existing.signedName = signedName;
+      existing.signatureData = signatureData;
+      existing.signedAt = now;
+    } else {
+      sigs.push({ documentId, signedName, signatureData, signedAt: now });
+    }
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("document_signatures").upsert(
+    {
+      user_id: profile.id,
+      document_id: documentId,
+      signed_name: signedName,
+      signature_data: signatureData,
+      signed_at: now,
+    },
+    { onConflict: "user_id,document_id" },
+  );
+}
+
+/* Admin document management */
+export async function saveDocument(doc: SignDocument): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const arr = demoState().documents;
+    const i = arr.findIndex((d) => d.id === doc.id);
+    if (i >= 0) arr[i] = doc;
+    else arr.push(doc);
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("documents").upsert(
+    {
+      id: doc.id,
+      title: doc.title,
+      description: doc.description,
+      body: doc.body,
+      file_url: doc.fileUrl,
+      required: doc.required,
+      order: doc.order,
+    },
+    { onConflict: "id" },
+  );
+}
+
+export async function createDocument(): Promise<SignDocument> {
+  const all = await getDocuments();
+  const doc: SignDocument = {
+    id: `doc-${Date.now()}`,
+    title: "New document",
+    description: "What this document is and why it needs signing.",
+    body: "<p>Add the document text here, or upload a PDF.</p>",
+    fileUrl: null,
+    required: true,
+    order: (all.at(-1)?.order ?? 0) + 1,
+  };
+  await saveDocument(doc);
+  return doc;
+}
+
+export async function deleteDocument(id: string): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const state = demoState();
+    state.documents = state.documents.filter((d) => d.id !== id);
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("documents").delete().eq("id", id);
+}
+
+/** Admin: how many starters have signed each document. */
+export async function getSignatureCounts(): Promise<Record<string, number>> {
+  if (!isSupabaseConfigured) {
+    const counts: Record<string, number> = {};
+    for (const s of demoState().signatures) {
+      counts[s.documentId] = (counts[s.documentId] ?? 0) + 1;
+    }
+    return counts;
+  }
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("document_signatures").select("document_id");
+  const counts: Record<string, number> = {};
+  for (const r of data ?? []) counts[r.document_id] = (counts[r.document_id] ?? 0) + 1;
+  return counts;
+}
 
 /* ───────────────────────── Email templates ───────────────────────── */
 
@@ -743,6 +868,7 @@ function mapModuleRow(row: any): Module {
     rewardXp: row.reward_xp ?? 0,
     heroMediaUrl: row.hero_media_url ?? null,
     heroPoster: row.hero_poster ?? null,
+    icon: row.icon ?? null,
     content: Array.isArray(row.content) ? row.content : [],
   };
 }
@@ -763,6 +889,7 @@ function moduleToRow(m: Module): Record<string, unknown> {
     reward_xp: m.rewardXp,
     hero_media_url: m.heroMediaUrl,
     hero_poster: m.heroPoster,
+    icon: m.icon ?? null,
     content: m.content,
   };
 }
@@ -817,6 +944,17 @@ function mapBadgeRow(r: any): Badge {
     icon: r.icon ?? "star",
     xp: r.xp ?? 0,
     criteria: r.criteria ?? "",
+  };
+}
+function mapDocumentRow(r: any): SignDocument {
+  return {
+    id: r.id,
+    title: r.title,
+    description: r.description ?? "",
+    body: r.body ?? null,
+    fileUrl: r.file_url ?? null,
+    required: r.required ?? true,
+    order: r.order ?? 0,
   };
 }
 function mapEmailRow(r: any): EmailTemplate {

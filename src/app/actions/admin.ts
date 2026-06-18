@@ -9,16 +9,19 @@ import {
   deleteCollectionItem,
   deleteEmailTemplate,
   deleteModule,
+  createDocument,
+  deleteDocument,
   inviteStarter,
   reorderCollection,
   reorderModules,
   saveCollectionItem,
+  saveDocument,
   saveEmailTemplate,
   saveModule,
   updateStarter,
   type CollectionName,
 } from "@/lib/data";
-import type { EmailTemplate, Module } from "@/lib/types";
+import type { EmailTemplate, Module, SignDocument } from "@/lib/types";
 
 export type InviteState =
   | { ok: boolean; message: string }
@@ -215,6 +218,40 @@ export async function sendTestEmailAction(
   return res.ok
     ? { ok: true, message: `Test sent to ${to}.` }
     : { ok: false, message: res.error ?? "Send failed." };
+}
+
+/* ───────────────────── Documents (e-signing) ─────────────────────── */
+
+function revalidateDocs() {
+  revalidatePath("/admin/documents");
+  revalidatePath("/documents");
+}
+
+export async function saveDocumentAction(
+  doc: SignDocument,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  if (!doc?.id) return { ok: false, message: "Missing document id." };
+  if (!doc.title?.trim()) return { ok: false, message: "Give the document a title." };
+  await saveDocument(doc);
+  revalidateDocs();
+  return { ok: true, message: "Document saved." };
+}
+
+export async function createDocumentAction(): Promise<{ document: SignDocument }> {
+  await requireAdmin();
+  const document = await createDocument();
+  revalidateDocs();
+  return { document };
+}
+
+export async function deleteDocumentAction(
+  id: string,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  await deleteDocument(id);
+  revalidateDocs();
+  return { ok: true, message: "Document deleted." };
 }
 
 /** Manually run the stalled-starter reminder job (same logic as the cron). */

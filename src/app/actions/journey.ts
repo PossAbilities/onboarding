@@ -5,6 +5,7 @@ import { requireProfile } from "@/lib/auth";
 import {
   collectEasterEgg,
   completeModule,
+  signDocument,
   submitIdea,
   updateMyAvatar,
   voteIdea,
@@ -30,6 +31,21 @@ export async function saveProfilePhotoAction(moduleId: string, url: string) {
   revalidatePath("/badges");
   revalidatePath("/leaderboard");
   return { ok: true as const, result };
+}
+
+/** Record a digital signature on a document. */
+export async function signDocumentAction(
+  documentId: string,
+  signedName: string,
+  signatureData: string | null,
+) {
+  const profile = await requireProfile();
+  if (!signedName.trim()) {
+    return { ok: false as const, message: "Please type your full name to sign." };
+  }
+  await signDocument(profile, documentId, signedName.trim(), signatureData);
+  revalidatePath("/documents");
+  return { ok: true as const };
 }
 
 export async function collectEggAction(eggId: string) {

@@ -10,6 +10,7 @@ import type {
   Module,
   Pet,
   Profile,
+  SignDocument,
 } from "./types";
 
 /**
@@ -113,6 +114,39 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
        <p style="margin:24px 0;">${button("View my certificate")}</p>
        <p style="font-size:14px;color:#80737f;">Welcome to the team, properly. 💜</p>`,
     ),
+  },
+];
+
+/** Documents new starters must read and digitally sign. */
+export const SIGN_DOCUMENTS: SignDocument[] = [
+  {
+    id: "doc-handbook",
+    title: "Employee Handbook Acknowledgement",
+    description:
+      "Confirm you have read and understood the PossAbilities Employee Handbook.",
+    body: "<p>I confirm that I have received, read and understood the PossAbilities Employee Handbook, including the policies on conduct, safeguarding, health &amp; safety, and equality &amp; diversity.</p><p>I understand it is my responsibility to ask my manager if anything is unclear, and to comply with these policies throughout my employment.</p>",
+    fileUrl: null,
+    required: true,
+    order: 1,
+  },
+  {
+    id: "doc-contract",
+    title: "Statement of Terms (Contract)",
+    description:
+      "Review and sign your statement of main terms of employment.",
+    body: "<p>This document sets out the main terms of your employment with PossAbilities CIC, including your role, hours, pay, holiday entitlement and notice periods.</p><p>By signing, you confirm the details are correct and you accept the terms as described.</p>",
+    fileUrl: null,
+    required: true,
+    order: 2,
+  },
+  {
+    id: "doc-it",
+    title: "IT & Acceptable Use Policy",
+    description: "Agree to our acceptable use policy for IT systems and data.",
+    body: "<p>I agree to use PossAbilities IT systems, devices and data responsibly and in line with the Acceptable Use and Data Protection policies, keeping the people we support and their information safe and confidential.</p>",
+    fileUrl: null,
+    required: true,
+    order: 3,
   },
 ];
 
@@ -434,12 +468,125 @@ export const MODULES: Module[] = [
     ],
   },
   {
-    id: "m-certificate",
-    slug: "certificate",
+    id: "m-posscars",
+    slug: "posscars",
     order: 10,
     level: 10,
+    kind: "content",
+    icon: "emoji_events",
+    title: "Mission 10: The PossCars",
+    shortTitle: "The PossCars",
+    description:
+      "Our very own staff awards! Once a year we roll out the (purple) carpet to celebrate the people who go above and beyond.",
+    estMinutes: 5,
+    required: false,
+    badgeId: null,
+    rewardXp: 60,
+    heroMediaUrl: null,
+    heroPoster: img("posscars-hero", 1200, 675),
+    content: [
+      { type: "heading", text: "And the award goes to… you, one day!" },
+      {
+        type: "paragraph",
+        text: "The PossCars are our annual celebration of brilliance. Every team member can be nominated by colleagues across categories that reflect our values — from 'Person-Centred Star' to 'Creative Spark' and 'Unsung Hero'.",
+      },
+      {
+        type: "gallery",
+        images: [
+          img("posscars-1", 800, 800),
+          img("posscars-2", 800, 800),
+          img("posscars-3", 800, 800),
+          img("posscars-4", 800, 800),
+          img("posscars-5", 800, 800),
+          img("posscars-6", 800, 800),
+        ],
+      },
+      {
+        type: "list",
+        items: [
+          "A glamorous awards evening with the whole organisation",
+          "Nominate colleagues who've made a real difference",
+          "Winners receive a trophy, a prize, and a lot of well-earned applause",
+          "Every nominee is celebrated — it's about recognition, not competition",
+        ],
+      },
+      {
+        type: "callout",
+        text: "Keep an eye out for nomination season — your chance to shine a light on a brilliant colleague.",
+      },
+    ],
+  },
+  {
+    id: "m-recognition",
+    slug: "positive-recognition",
+    order: 11,
+    level: 11,
+    kind: "content",
+    icon: "volunteer_activism",
+    title: "Mission 11: Positive Recognition",
+    shortTitle: "Positive Recognition",
+    description:
+      "Recognition isn't just for awards night. Discover how we say thank you and celebrate each other every single day.",
+    estMinutes: 4,
+    required: false,
+    badgeId: null,
+    rewardXp: 60,
+    heroMediaUrl: null,
+    heroPoster: img("recognition-hero", 1200, 675),
+    content: [
+      { type: "heading", text: "A culture of thank you" },
+      {
+        type: "paragraph",
+        text: "Our Positive Recognition service makes it easy for anyone to recognise a colleague for living our values — a quick shout-out, a thank-you note, or a nomination that reaches the whole team.",
+      },
+      {
+        type: "list",
+        items: [
+          "Send a colleague a recognition shout-out at any time",
+          "Recognitions are shared with their manager and celebrated team-wide",
+          "Collect recognitions towards rewards and PossCars nominations",
+          "Managers use recognitions in supervisions to celebrate great work",
+        ],
+      },
+      {
+        type: "quote",
+        text: "Feeling genuinely appreciated for the work you do changes everything. That's what recognition is all about.",
+        author: "PossAbilities People Team",
+      },
+    ],
+  },
+  {
+    id: "m-welcome-close",
+    slug: "welcome-to-possabilities",
+    order: 12,
+    level: 12,
+    kind: "content",
+    icon: "celebration",
+    title: "Mission 12: Welcome to PossAbilities",
+    shortTitle: "Welcome to the Family",
+    description:
+      "You've made it! One last video to officially welcome you to the PossAbilities family.",
+    estMinutes: 3,
+    required: true,
+    badgeId: null,
+    rewardXp: 100,
+    heroMediaUrl: SAMPLE_VIDEO,
+    heroPoster: img("welcome-close-hero", 1200, 675),
+    content: [
+      { type: "heading", text: "Welcome to PossAbilities! 💜" },
+      {
+        type: "paragraph",
+        text: "That's your induction journey complete. Press play for a warm welcome from the whole team — then head to the summit to sign your documents and collect your certificate.",
+      },
+    ],
+  },
+  {
+    id: "m-certificate",
+    slug: "certificate",
+    order: 13,
+    level: 13,
     kind: "certificate",
-    title: "Mission 10: Reach the Summit",
+    title: "Mission 13: Reach the Summit",
     shortTitle: "Certificate",
     description:
       "Finalise your induction by reviewing and signing your digital documents, then download your official completion certificate.",

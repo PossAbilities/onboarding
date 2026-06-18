@@ -299,6 +299,20 @@ export function MissionEditor({
               </Field>
             </div>
 
+            <Field label="Path icon (Material Symbol name — optional)">
+              <div className="flex items-center gap-2">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary-fixed text-on-primary-fixed-variant">
+                  <Icon name={draft.icon || "circle"} fill />
+                </span>
+                <input
+                  value={draft.icon ?? ""}
+                  onChange={(e) => set("icon", e.target.value || null)}
+                  placeholder="e.g. emoji_events, volunteer_activism"
+                  className="field-focus w-full rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-mono text-sm text-on-surface"
+                />
+              </div>
+            </Field>
+
             <div className="rounded-lg bg-surface-container-low p-4">
               <MediaUpload
                 label="Hero media (welcome video or image)"

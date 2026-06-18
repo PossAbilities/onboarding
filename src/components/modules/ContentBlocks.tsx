@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { Icon } from "@/components/ui/Icon";
 import type { ContentBlock } from "@/lib/types";
 
@@ -60,6 +61,29 @@ export function ContentBlocks({ blocks }: { blocks: ContentBlock[] }) {
                   </li>
                 ))}
               </ul>
+            );
+          case "gallery":
+            return (
+              <div
+                key={i}
+                className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+              >
+                {(block.images ?? []).map((src, j) => (
+                  <a
+                    key={j}
+                    href={src}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group relative overflow-hidden rounded-lg border border-outline-variant/40 bg-surface-container-high"
+                  >
+                    <img
+                      src={src}
+                      alt=""
+                      className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </a>
+                ))}
+              </div>
             );
           case "callout":
             return (

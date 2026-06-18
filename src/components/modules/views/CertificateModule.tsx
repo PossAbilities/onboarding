@@ -99,7 +99,7 @@ export async function CertificateModule(props: CertificateViewProps) {
           <strong className="text-secondary">{badgeName}</strong> badge and{" "}
           +{module.rewardXp} XP.
         </p>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap gap-3">
           <CompleteModuleButton
             moduleId={module.id}
             rewardXp={module.rewardXp}
@@ -108,6 +108,12 @@ export async function CertificateModule(props: CertificateViewProps) {
             alreadyCompleted={alreadyCompleted}
             label="Finalise & sign induction"
           />
+          <Link
+            href="/documents"
+            className="btn-3d-purple inline-flex items-center gap-2 rounded-xl bg-primary-container px-6 py-3.5 text-base font-bold text-on-primary"
+          >
+            <Icon name="draw" size={20} /> Review &amp; sign my documents
+          </Link>
         </div>
       </div>
     </div>
