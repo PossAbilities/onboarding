@@ -15,6 +15,7 @@ import {
   createEmailTemplateAction,
   deleteEmailTemplateAction,
   saveEmailTemplateAction,
+  sendTestEmailAction,
 } from "@/app/actions/admin";
 import type { EmailTemplate, EmailTrigger } from "@/lib/types";
 
@@ -43,6 +44,7 @@ export function EmailEditor({ templates: initial }: { templates: EmailTemplate[]
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const focused = useRef<"subject" | "body">("body");
+  const [testTo, setTestTo] = useState("");
 
   const original = templates.find((t) => t.id === selectedId);
   const dirty = original && draft ? dirtyOf(draft, original) : false;
@@ -93,6 +95,14 @@ export function EmailEditor({ templates: initial }: { templates: EmailTemplate[]
       }
       setMsg({ ok: res.ok, text: res.message });
       router.refresh();
+    });
+  };
+
+  const sendTest = () => {
+    if (!draft) return;
+    startTransition(async () => {
+      const res = await sendTestEmailAction(draft, testTo.trim());
+      setMsg({ ok: res.ok, text: res.message });
     });
   };
 
@@ -303,6 +313,30 @@ export function EmailEditor({ templates: initial }: { templates: EmailTemplate[]
                 >
                   <Icon name="save" size={18} /> {pending ? "Saving…" : "Save"}
                 </button>
+              </div>
+
+              {/* Send a test */}
+              <div className="rounded-lg bg-surface-container-low p-3">
+                <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-on-surface-variant">
+                  <Icon name="send" size={16} /> Send yourself a test
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <input
+                    type="email"
+                    value={testTo}
+                    onChange={(e) => setTestTo(e.target.value)}
+                    placeholder="you@possabilities.org.uk"
+                    className="field-focus min-w-0 flex-1 rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={sendTest}
+                    disabled={pending || !testTo.trim()}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary-container px-4 py-2 text-sm font-bold text-on-primary disabled:opacity-50"
+                  >
+                    <Icon name="outgoing_mail" size={18} /> Send test
+                  </button>
+                </div>
               </div>
             </div>
           </div>

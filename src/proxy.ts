@@ -10,7 +10,7 @@ import { createServerClient } from "@supabase/ssr";
  *
  * When Supabase isn't configured we fall back to the demo cookie.
  */
-const PUBLIC_PATHS = ["/login", "/accept-invite", "/auth"];
+const PUBLIC_PATHS = ["/login", "/accept-invite", "/auth", "/api/cron"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

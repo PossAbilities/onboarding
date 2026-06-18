@@ -85,6 +85,27 @@ the built-in HTML5 player (no third-party embeds).
 
 ---
 
+## 📧 Email sending & scheduled reminders (Resend)
+
+1. **Get a Resend key** at [resend.com](https://resend.com) → API Keys.
+2. Add env vars (locally in `.env.local`, and in Netlify for production):
+   ```
+   RESEND_API_KEY=re_...
+   EMAIL_FROM=PossAbilities <noreply@yourdomain.org.uk>   # verify the domain in Resend
+   CRON_SECRET=<any long random string>
+   REMINDER_STALE_DAYS=3
+   ```
+   > For a quick test without a domain, `EMAIL_FROM="PossAbilities <onboarding@resend.dev>"`
+   > works but only delivers to your own Resend account email.
+3. In **Admin → Email Templates**, hit **Send test** to confirm delivery.
+4. **Daily reminder job:** `netlify/functions/daily-reminders.mts` is a Netlify
+   Scheduled Function (runs 09:00 UTC by default). It calls the protected
+   `/api/cron/reminders` route, which finds active starters with no activity for
+   `REMINDER_STALE_DAYS`+ days and emails them the enabled **reminder** template.
+   - Set the **same `CRON_SECRET`** in Netlify so the function can authenticate.
+   - Trigger it any time from **Admin → Email Templates → "Send reminders now"**.
+   - The reminder job needs both Supabase (to find starters) and Resend (to send).
+
 ## 🌐 Deploy to Netlify
 
 This repo includes `netlify.toml` with the official Next.js runtime.
@@ -93,8 +114,10 @@ This repo includes `netlify.toml` with the official Next.js runtime.
 2. In Netlify → **Add new site → Import from GitHub**, pick the repo.
 3. Build settings are auto-detected from `netlify.toml`
    (`npm run build`, plugin `@netlify/plugin-nextjs`).
-4. **Site settings → Environment variables** — add the four vars from step 3
-   above, setting `NEXT_PUBLIC_SITE_URL` to your Netlify URL.
+4. **Site settings → Environment variables** — add the Supabase vars (setting
+   `NEXT_PUBLIC_SITE_URL` to your Netlify URL) plus, for email, `RESEND_API_KEY`,
+   `EMAIL_FROM`, and `CRON_SECRET`. The scheduled reminder function deploys
+   automatically from `netlify/functions/`.
 5. Deploy. (Without the Supabase vars it deploys in demo mode — handy for a
    quick shareable preview.)
 
@@ -153,10 +176,14 @@ templates, insert **system merge-tags** (`{{first_name}}`, `{{journey_name}}`,
 and see a **live preview** (desktop/mobile) rendered with sample data. Ships
 with Welcome, Reminder and Completion templates.
 
-> **Sending:** templates are designed and stored here; welcome emails already
-> go out via Supabase invites. To send reminder/completion emails on a schedule,
-> wire an email provider (e.g. [Resend](https://resend.com)) to `renderTemplate`
-> in `src/lib/email.ts` — the merge-tag substitution is already done for you.
+**Sending is wired up via [Resend](https://resend.com).** Add `RESEND_API_KEY`
+and `EMAIL_FROM` and the system will:
+- **Send a test** of any template to yourself from the editor.
+- Email the **completion** template automatically when a starter finishes.
+- **Nudge stalled starters** daily (see below).
+
+Welcome/invite emails still go out via Supabase invites (they carry the
+set-password link). See the **Email sending & scheduled reminders** section.
 
 Prefer editing in code? `src/lib/seed.ts` holds the starting catalogue
 (missions, directors, benefits, pets, locations, badges, values, email

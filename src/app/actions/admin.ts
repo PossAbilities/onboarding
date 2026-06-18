@@ -173,6 +173,39 @@ export async function deleteEmailTemplateAction(
   return { ok: true, message: "Template deleted." };
 }
 
+/** Send a one-off test of a template (using sample data) to an address. */
+export async function sendTestEmailAction(
+  template: EmailTemplate,
+  to: string,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+    return { ok: false, message: "Enter a valid email address." };
+  }
+  const { isEmailConfigured, sendTestEmail } = await import("@/lib/mailer");
+  if (!isEmailConfigured) {
+    return {
+      ok: false,
+      message: "Email sending isn't configured yet — add RESEND_API_KEY.",
+    };
+  }
+  const res = await sendTestEmail(template, to);
+  return res.ok
+    ? { ok: true, message: `Test sent to ${to}.` }
+    : { ok: false, message: res.error ?? "Send failed." };
+}
+
+/** Manually run the stalled-starter reminder job (same logic as the cron). */
+export async function sendRemindersAction(): Promise<{
+  ok: boolean;
+  message: string;
+}> {
+  await requireAdmin();
+  const { sendStalledReminders } = await import("@/lib/mailer");
+  const res = await sendStalledReminders();
+  return { ok: res.ok, message: res.message };
+}
+
 /** Bulk import from pasted CSV: `name,email,role` per line (header optional). */
 export async function bulkInviteAction(
   _prev: InviteState,

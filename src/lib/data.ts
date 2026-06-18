@@ -371,6 +371,7 @@ export async function completeModule(
       if (mod.badgeId && !state.earnedBadges.some((b) => b.badgeId === mod.badgeId)) {
         state.earnedBadges.push({ badgeId: mod.badgeId, unlockedAt: now });
       }
+      if (mod.kind === "certificate") await fireCompletionEmail(profile);
     }
     return { badgeId: already ? null : mod.badgeId, xp: mod.rewardXp };
   }
@@ -401,7 +402,18 @@ export async function completeModule(
         { onConflict: "user_id,badge_id" },
       );
   }
+  if (mod.kind === "certificate") await fireCompletionEmail(profile);
   return { badgeId: mod.badgeId, xp: mod.rewardXp };
+}
+
+/** Best-effort completion email — never blocks/throws the completion flow. */
+async function fireCompletionEmail(profile: Profile) {
+  try {
+    const { sendCompletionEmail } = await import("./mailer");
+    await sendCompletionEmail(profile);
+  } catch {
+    /* ignore email failures */
+  }
 }
 
 /** Easter-egg hunt (Navigator badge). Returns total found so far. */
