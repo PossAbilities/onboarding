@@ -5,6 +5,7 @@ import { getJourneyState, getModuleBySlug, getModules } from "@/lib/data";
 import { statusFor } from "@/lib/journey";
 import { WelcomeModule } from "@/components/modules/views/WelcomeModule";
 import { DirectorsModule } from "@/components/modules/views/DirectorsModule";
+import { ManagerModule } from "@/components/modules/views/ManagerModule";
 import { CultureModule } from "@/components/modules/views/CultureModule";
 import { BenefitsModule } from "@/components/modules/views/BenefitsModule";
 import { BigIdeaModule } from "@/components/modules/views/BigIdeaModule";
@@ -57,6 +58,8 @@ export default async function ModulePage({
       return <WelcomeModule {...common} />;
     case "directors":
       return <DirectorsModule {...common} />;
+    case "manager":
+      return <ManagerModule {...common} />;
     case "culture":
       return <CultureModule {...common} />;
     case "benefits":

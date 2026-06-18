@@ -6,6 +6,7 @@ import {
   EMAIL_TEMPLATES,
   IDEAS,
   LOCATIONS,
+  MANAGERS,
   MODULES,
   PETS,
   VALUES,
@@ -19,6 +20,7 @@ import type {
   Idea,
   Invite,
   Location,
+  Manager,
   Module,
   ModuleProgress,
   Pet,
@@ -51,6 +53,7 @@ interface DemoState {
   locations: Location[];
   badges: Badge[];
   values: CompanyValue[];
+  managers: Manager[];
   emailTemplates: EmailTemplate[];
 }
 
@@ -96,6 +99,7 @@ function seedState(): DemoState {
     locations: LOCATIONS.map((l) => ({ ...l, services: [...l.services] })),
     badges: BADGES.map((b) => ({ ...b })),
     values: VALUES.map((v) => ({ ...v })),
+    managers: MANAGERS.map((m) => ({ ...m })),
     emailTemplates: EMAIL_TEMPLATES.map((e) => ({ ...e })),
   };
 }

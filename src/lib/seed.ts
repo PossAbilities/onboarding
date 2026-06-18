@@ -6,6 +6,7 @@ import type {
   EmailTemplate,
   Idea,
   Location,
+  Manager,
   Module,
   Pet,
   Profile,
@@ -265,12 +266,36 @@ export const MODULES: Module[] = [
     ],
   },
   {
-    id: "m-culture",
-    slug: "culture",
+    id: "m-manager",
+    slug: "meet-your-manager",
     order: 3,
     level: 3,
+    kind: "manager",
+    title: "Mission 03: Meet Your Manager",
+    shortTitle: "Meet Your Manager",
+    description:
+      "Meet the person who'll have your back day to day. Watch a personal hello from your manager and learn how you'll work together.",
+    estMinutes: 5,
+    required: true,
+    badgeId: null,
+    rewardXp: 80,
+    heroMediaUrl: null,
+    heroPoster: img("manager-hero", 1200, 675),
+    content: [
+      { type: "heading", text: "Your day-to-day support" },
+      {
+        type: "paragraph",
+        text: "This one's personal. Below is a short welcome video from your assigned manager, plus how to reach them and book your first catch-up.",
+      },
+    ],
+  },
+  {
+    id: "m-culture",
+    slug: "culture",
+    order: 4,
+    level: 4,
     kind: "culture",
-    title: "Mission 03: Our Culture & Values",
+    title: "Mission 04: Our Culture & Values",
     shortTitle: "Our Culture",
     description:
       "Step into the heart of PossAbilities. Discover how we celebrate brilliance, foster innovation, and recognise the people who make our mission possible.",
@@ -291,10 +316,10 @@ export const MODULES: Module[] = [
   {
     id: "m-benefits",
     slug: "benefits",
-    order: 4,
-    level: 4,
+    order: 5,
+    level: 5,
     kind: "benefits",
-    title: "Mission 04: Your Life, Your Perks",
+    title: "Mission 05: Your Life, Your Perks",
     shortTitle: "Benefits",
     description:
       "We believe that when you thrive, we thrive. Our benefits are designed to support your financial health, professional growth, and personal wellbeing.",
@@ -315,10 +340,10 @@ export const MODULES: Module[] = [
   {
     id: "m-bigidea",
     slug: "big-idea",
-    order: 5,
-    level: 5,
+    order: 6,
+    level: 6,
     kind: "bigidea",
-    title: "Mission 05: The BIG Idea Portal",
+    title: "Mission 06: The BIG Idea Portal",
     shortTitle: "The BIG Idea",
     description:
       "Got a better way to do things? We want to hear it! Join the movement of thinkers and builders making our company better every day.",
@@ -339,10 +364,10 @@ export const MODULES: Module[] = [
   {
     id: "m-pets",
     slug: "very-important-pets",
-    order: 6,
-    level: 6,
+    order: 7,
+    level: 7,
     kind: "pets",
-    title: "Mission 06: Very Important Pets",
+    title: "Mission 07: Very Important Pets",
     shortTitle: "V.I.P. Wellbeing",
     description:
       "Our furry teammates are a huge part of our culture. Meet them here — and discover our wellbeing hub.",
@@ -363,10 +388,10 @@ export const MODULES: Module[] = [
   {
     id: "m-locations",
     slug: "locations",
-    order: 7,
-    level: 7,
+    order: 8,
+    level: 8,
     kind: "locations",
-    title: "Mission 07: Locations & Services",
+    title: "Mission 08: Locations & Services",
     shortTitle: "Locations",
     description:
       "Explore where we work and the brilliant services we deliver across the region.",
@@ -387,10 +412,10 @@ export const MODULES: Module[] = [
   {
     id: "m-certificate",
     slug: "certificate",
-    order: 8,
-    level: 8,
+    order: 9,
+    level: 9,
     kind: "certificate",
-    title: "Mission 08: Reach the Summit",
+    title: "Mission 09: Reach the Summit",
     shortTitle: "Certificate",
     description:
       "Finalise your induction by reviewing and signing your digital documents, then download your official completion certificate.",
@@ -407,6 +432,50 @@ export const MODULES: Module[] = [
         text: "Your journey data has been synchronized with the HR portal. You can now download your official certificate for your professional development records.",
       },
     ],
+  },
+];
+
+/** Managers — each has an intro video shown to the starters they manage. */
+const MGR_VIDEO_1 =
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4";
+const MGR_VIDEO_2 =
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4";
+const MGR_VIDEO_3 =
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4";
+
+export const MANAGERS: Manager[] = [
+  {
+    id: "mgr-priya",
+    name: "Priya Patel",
+    role: "Team Leader",
+    department: "Supported Living",
+    bio: "Priya leads the Supported Living team and will be your day-to-day go-to. She's all about settling you in gently.",
+    photoUrl: avatar(31),
+    videoUrl: MGR_VIDEO_1,
+    calendarUrl: null,
+    order: 1,
+  },
+  {
+    id: "mgr-daniel",
+    name: "Daniel O'Brien",
+    role: "Service Manager",
+    department: "Day Services",
+    bio: "Daniel oversees Day Services. Expect big ideas, an open door, and a terrible-but-loveable sense of humour.",
+    photoUrl: avatar(14),
+    videoUrl: MGR_VIDEO_2,
+    calendarUrl: null,
+    order: 2,
+  },
+  {
+    id: "mgr-aisha",
+    name: "Aisha Khan",
+    role: "Registered Manager",
+    department: "Community Outreach",
+    bio: "Aisha manages our Community Outreach service and is passionate about person-centred support done right.",
+    photoUrl: avatar(25),
+    videoUrl: MGR_VIDEO_3,
+    calendarUrl: null,
+    order: 3,
   },
 ];
 
@@ -634,6 +703,8 @@ export const DEMO_USER: Profile = {
   fullName: "Alex Guru",
   email: "demo@possabilities.org.uk",
   roleTag: "Support Worker",
+  department: "Supported Living",
+  managerId: "mgr-priya",
   avatarUrl: avatar(68),
   isAdmin: false,
   journeyPoints: 850,
@@ -648,6 +719,8 @@ export const DEMO_ADMIN: Profile = {
   fullName: "Jordan Admin",
   email: "digital@possabilities.org.uk",
   roleTag: "People & Culture",
+  department: "People & Culture",
+  managerId: null,
   avatarUrl: avatar(5),
   isAdmin: true,
   journeyPoints: 0,
@@ -664,6 +737,8 @@ export const DEMO_STARTERS: Profile[] = [
     fullName: "Sarah Miller",
     email: "s.miller@possabilities.org",
     roleTag: "Support Worker",
+    department: "Supported Living",
+    managerId: "mgr-priya",
     avatarUrl: avatar(20),
     isAdmin: false,
     journeyPoints: 540,
@@ -677,6 +752,8 @@ export const DEMO_STARTERS: Profile[] = [
     fullName: "James Davidson",
     email: "j.davidson@possabilities.org",
     roleTag: "Manager",
+    department: "Day Services",
+    managerId: "mgr-daniel",
     avatarUrl: avatar(13),
     isAdmin: false,
     journeyPoints: 120,
@@ -690,6 +767,8 @@ export const DEMO_STARTERS: Profile[] = [
     fullName: "Elena Wright",
     email: "e.wright@possabilities.org",
     roleTag: "Volunteer",
+    department: "Community Outreach",
+    managerId: "mgr-aisha",
     avatarUrl: avatar(32),
     isAdmin: false,
     journeyPoints: 60,
@@ -703,6 +782,8 @@ export const DEMO_STARTERS: Profile[] = [
     fullName: "Omar Haddad",
     email: "o.haddad@possabilities.org",
     roleTag: "Support Worker",
+    department: "Supported Living",
+    managerId: "mgr-priya",
     avatarUrl: avatar(60),
     isAdmin: false,
     journeyPoints: 1500,
@@ -720,4 +801,14 @@ export const ROLE_TAGS = [
   "Administrator",
   "Care Coordinator",
   "People & Culture",
+];
+
+export const DEPARTMENTS = [
+  "Supported Living",
+  "Day Services",
+  "Community Outreach",
+  "Head Office",
+  "People & Culture",
+  "Enterprise",
+  "Facilities",
 ];

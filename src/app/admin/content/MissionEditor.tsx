@@ -19,6 +19,7 @@ import type { Badge, Module, ModuleKind } from "@/lib/types";
 const KIND_OPTIONS: { value: ModuleKind; label: string }[] = [
   { value: "video", label: "Welcome video" },
   { value: "directors", label: "Meet the Directors (profile grid)" },
+  { value: "manager", label: "Meet Your Manager (personalised video)" },
   { value: "culture", label: "Culture & values (with game)" },
   { value: "benefits", label: "Benefits grid" },
   { value: "bigidea", label: "BIG Idea portal" },

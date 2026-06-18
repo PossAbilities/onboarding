@@ -15,6 +15,7 @@ import {
   saveCollectionItem,
   saveEmailTemplate,
   saveModule,
+  updateStarter,
   type CollectionName,
 } from "@/lib/data";
 import type { EmailTemplate, Module } from "@/lib/types";
@@ -31,6 +32,8 @@ export async function inviteStarterAction(
   const fullName = String(formData.get("fullName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const roleTag = String(formData.get("roleTag") ?? "New Starter");
+  const department = String(formData.get("department") ?? "").trim() || null;
+  const managerId = String(formData.get("managerId") ?? "").trim() || null;
 
   if (!fullName || !email) {
     return { ok: false, message: "Name and email are required." };
@@ -39,10 +42,29 @@ export async function inviteStarterAction(
     return { ok: false, message: "Please enter a valid email address." };
   }
 
-  const res = await inviteStarter(admin.id, { email, fullName, roleTag });
+  const res = await inviteStarter(admin.id, {
+    email,
+    fullName,
+    roleTag,
+    department,
+    managerId,
+  });
   revalidatePath("/admin/starters");
   revalidatePath("/admin");
   return res;
+}
+
+/** Reassign a starter's department / manager / role. */
+export async function updateStarterAction(
+  id: string,
+  patch: { department: string | null; managerId: string | null; roleTag: string },
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  await updateStarter(id, patch);
+  revalidatePath("/admin/starters");
+  revalidatePath("/journey");
+  revalidatePath("/modules", "layout");
+  return { ok: true, message: "Starter updated." };
 }
 
 function revalidateContent() {

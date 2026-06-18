@@ -15,6 +15,7 @@ import type {
   IdeaStatus,
   JourneyState,
   Location,
+  Manager,
   Module,
   ModuleProgress,
   Pet,
@@ -166,6 +167,19 @@ export async function getValues(): Promise<CompanyValue[]> {
     .select("*")
     .order("order");
   return (data ?? []).map(mapValueRow);
+}
+
+export async function getManagers(): Promise<Manager[]> {
+  if (!isSupabaseConfigured) return [...demoState().managers].sort(byOrder);
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("managers").select("*").order("order");
+  return (data ?? []).map(mapManagerRow);
+}
+export async function getManagerById(
+  id: string | null,
+): Promise<Manager | undefined> {
+  if (!id) return undefined;
+  return (await getManagers()).find((m) => m.id === id);
 }
 
 /** `values` maps to the `company_values` table (`values` is a SQL keyword). */
@@ -595,9 +609,17 @@ export async function getStarterStats(): Promise<StarterStats> {
   };
 }
 
+export interface InviteInput {
+  email: string;
+  fullName: string;
+  roleTag: string;
+  department?: string | null;
+  managerId?: string | null;
+}
+
 export async function inviteStarter(
   invitedBy: string,
-  input: { email: string; fullName: string; roleTag: string },
+  input: InviteInput,
 ): Promise<{ ok: boolean; message: string }> {
   if (!isSupabaseConfigured) {
     const state = demoState();
@@ -609,6 +631,8 @@ export async function inviteStarter(
       fullName: input.fullName,
       email: input.email,
       roleTag: input.roleTag,
+      department: input.department ?? null,
+      managerId: input.managerId ?? null,
       avatarUrl: null,
       isAdmin: false,
       journeyPoints: 0,
@@ -635,6 +659,8 @@ export async function inviteStarter(
       email: input.email,
       full_name: input.fullName,
       role_tag: input.roleTag,
+      department: input.department ?? null,
+      manager_id: input.managerId ?? null,
       is_admin: false,
       status: "invited",
       invited_by: invitedBy,
@@ -643,9 +669,31 @@ export async function inviteStarter(
   return { ok: true, message: `Invitation emailed to ${input.email}.` };
 }
 
+/** Update a starter's department / manager / role. */
+export async function updateStarter(
+  id: string,
+  patch: { department?: string | null; managerId?: string | null; roleTag?: string },
+): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const s = demoState().starters.find((x) => x.id === id);
+    if (s) {
+      if (patch.department !== undefined) s.department = patch.department;
+      if (patch.managerId !== undefined) s.managerId = patch.managerId;
+      if (patch.roleTag !== undefined) s.roleTag = patch.roleTag;
+    }
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  const row: Record<string, unknown> = {};
+  if (patch.department !== undefined) row.department = patch.department;
+  if (patch.managerId !== undefined) row.manager_id = patch.managerId;
+  if (patch.roleTag !== undefined) row.role_tag = patch.roleTag;
+  await supabase.from("profiles").update(row).eq("id", id);
+}
+
 export async function bulkInvite(
   invitedBy: string,
-  rows: { email: string; fullName: string; roleTag: string }[],
+  rows: InviteInput[],
 ): Promise<{ invited: number; skipped: number; messages: string[] }> {
   let invited = 0;
   let skipped = 0;
@@ -766,6 +814,19 @@ function mapEmailRow(r: any): EmailTemplate {
     updatedAt: r.updated_at ?? null,
   };
 }
+function mapManagerRow(r: any): Manager {
+  return {
+    id: r.id,
+    name: r.name,
+    role: r.role ?? "",
+    department: r.department ?? "",
+    bio: r.bio ?? "",
+    photoUrl: r.photo_url ?? "",
+    videoUrl: r.video_url ?? null,
+    calendarUrl: r.calendar_url ?? null,
+    order: r.order ?? 0,
+  };
+}
 function mapValueRow(r: any): CompanyValue {
   return {
     id: r.id,
@@ -835,6 +896,18 @@ function collectionToRow(
         label: item.label,
         icon: item.icon,
         match: item.match,
+        order: item.order ?? 0,
+      };
+    case "managers":
+      return {
+        id: item.id,
+        name: item.name,
+        role: item.role,
+        department: item.department,
+        bio: item.bio,
+        photo_url: item.photoUrl,
+        video_url: item.videoUrl ?? null,
+        calendar_url: item.calendarUrl ?? null,
         order: item.order ?? 0,
       };
   }

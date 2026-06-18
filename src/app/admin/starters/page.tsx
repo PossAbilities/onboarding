@@ -1,25 +1,34 @@
 import type { Metadata } from "next";
-import { getStarters } from "@/lib/data";
+import { getManagers, getStarters } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { Chip } from "@/components/ui/Chip";
 import { Icon } from "@/components/ui/Icon";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { InviteStarterForm, BulkImportForm } from "./InviteForms";
+import { EditStarter } from "./EditStarter";
 
 export const metadata: Metadata = { title: "Admin · Manage Starters" };
 
 export default async function ManageStartersPage() {
-  const starters = await getStarters();
+  const [starters, managers] = await Promise.all([getStarters(), getManagers()]);
+  const managerOptions = managers.map((m) => ({
+    id: m.id,
+    name: m.name,
+    role: m.role,
+  }));
+  const managerName = (id: string | null) =>
+    id ? (managers.find((m) => m.id === id)?.name ?? "—") : "—";
 
   return (
     <div className="mx-auto max-w-6xl">
       <h1 className="text-3xl font-black text-on-surface">Manage Starters</h1>
       <p className="mt-1 text-on-surface-variant">
-        Invite new team members and track their induction progress.
+        Invite new team members, assign their department &amp; manager, and track
+        progress.
       </p>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        <InviteStarterForm />
+        <InviteStarterForm managers={managerOptions} />
         <BulkImportForm />
       </div>
 
@@ -32,14 +41,15 @@ export default async function ManageStartersPage() {
           </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="bg-surface-container-low text-xs font-bold uppercase tracking-wide text-on-surface-variant">
               <tr>
                 <th className="px-5 py-3">Employee</th>
-                <th className="px-5 py-3">Role</th>
+                <th className="px-5 py-3">Role &amp; dept</th>
+                <th className="px-5 py-3">Manager</th>
                 <th className="px-5 py-3">Progress</th>
                 <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3 text-right">XP</th>
+                <th className="px-5 py-3 text-right">Edit</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/40">
@@ -60,12 +70,27 @@ export default async function ManageStartersPage() {
                   </td>
                   <td className="px-5 py-3">
                     <Chip tone="purple">{s.roleTag}</Chip>
+                    {s.department && (
+                      <p className="mt-1 text-xs text-on-surface-variant">
+                        {s.department}
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-5 py-3">
+                    <span className="inline-flex items-center gap-1 font-bold text-on-surface">
+                      <Icon
+                        name="supervisor_account"
+                        size={16}
+                        className="text-on-surface-variant"
+                      />
+                      {managerName(s.managerId)}
+                    </span>
                   </td>
                   <td className="px-5 py-3">
                     <ProgressBar
                       value={Math.min(100, Math.round((s.journeyPoints / 1500) * 100))}
                       showLabel
-                      className="w-36"
+                      className="w-28"
                     />
                   </td>
                   <td className="px-5 py-3">
@@ -82,9 +107,16 @@ export default async function ManageStartersPage() {
                     </Chip>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <span className="inline-flex items-center gap-1 font-bold text-secondary">
-                      <Icon name="bolt" size={16} fill /> {s.journeyPoints}
-                    </span>
+                    <EditStarter
+                      starter={{
+                        id: s.id,
+                        fullName: s.fullName,
+                        roleTag: s.roleTag,
+                        department: s.department,
+                        managerId: s.managerId,
+                      }}
+                      managers={managerOptions}
+                    />
                   </td>
                 </tr>
               ))}

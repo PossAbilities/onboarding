@@ -6,6 +6,7 @@
 export type ModuleKind =
   | "video" // welcome video
   | "directors" // meet the directors
+  | "manager" // meet your (assigned) manager
   | "culture" // culture & values
   | "benefits" // perks
   | "bigidea" // innovation portal
@@ -28,6 +29,8 @@ export interface Profile {
   fullName: string;
   email: string;
   roleTag: string;
+  department: string | null;
+  managerId: string | null;
   avatarUrl: string | null;
   isAdmin: boolean;
   journeyPoints: number;
@@ -35,6 +38,19 @@ export interface Profile {
   startedAt: string | null;
   lastActivityAt: string | null;
   invitedBy: string | null;
+}
+
+/** A manager whose intro video appears on their assigned starters' journeys. */
+export interface Manager {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  bio: string;
+  photoUrl: string;
+  videoUrl: string | null;
+  calendarUrl: string | null;
+  order: number;
 }
 
 export interface ContentBlock {
@@ -174,7 +190,8 @@ export type CollectionName =
   | "pets"
   | "locations"
   | "badges"
-  | "values";
+  | "values"
+  | "managers";
 
 /** Aggregated journey state for the signed-in employee. */
 export interface JourneyState {

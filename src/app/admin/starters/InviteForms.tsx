@@ -7,7 +7,13 @@ import {
   type InviteState,
 } from "@/app/actions/admin";
 import { Icon } from "@/components/ui/Icon";
-import { ROLE_TAGS } from "@/lib/seed";
+import { ROLE_TAGS, DEPARTMENTS } from "@/lib/seed";
+
+export interface ManagerOption {
+  id: string;
+  name: string;
+  role: string;
+}
 
 function Notice({ state }: { state: InviteState }) {
   if (!state) return null;
@@ -25,7 +31,7 @@ function Notice({ state }: { state: InviteState }) {
   );
 }
 
-export function InviteStarterForm() {
+export function InviteStarterForm({ managers }: { managers: ManagerOption[] }) {
   const [state, action, pending] = useActionState<InviteState, FormData>(
     inviteStarterAction,
     undefined,
@@ -58,7 +64,7 @@ export function InviteStarterForm() {
             className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm font-bold text-on-surface sm:col-span-2">
+        <label className="flex flex-col gap-1 text-sm font-bold text-on-surface">
           Role
           <select
             name="roleTag"
@@ -68,6 +74,35 @@ export function InviteStarterForm() {
               <option key={r}>{r}</option>
             ))}
           </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-bold text-on-surface">
+          Department
+          <select
+            name="department"
+            className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+          >
+            {DEPARTMENTS.map((d) => (
+              <option key={d}>{d}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-bold text-on-surface sm:col-span-2">
+          Assigned manager
+          <select
+            name="managerId"
+            defaultValue=""
+            className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+          >
+            <option value="">— No manager yet —</option>
+            {managers.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name} · {m.role}
+              </option>
+            ))}
+          </select>
+          <span className="text-xs font-normal text-on-surface-variant">
+            This sets their personalised &ldquo;Meet Your Manager&rdquo; mission.
+          </span>
         </label>
       </div>
       <Notice state={state} />

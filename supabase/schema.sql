@@ -10,6 +10,8 @@ create table if not exists public.profiles (
   email text,
   full_name text,
   role_tag text default 'New Starter',
+  department text,
+  manager_id text,
   avatar_url text,
   is_admin boolean not null default false,
   journey_points integer not null default 0,
@@ -46,6 +48,18 @@ create table if not exists public.directors (
   bio text,
   photo_url text,
   video_url text,
+  "order" integer default 0
+);
+
+create table if not exists public.managers (
+  id text primary key,
+  name text not null,
+  role text,
+  department text,
+  bio text,
+  photo_url text,
+  video_url text,
+  calendar_url text,
   "order" integer default 0
 );
 
@@ -219,7 +233,7 @@ create policy "ideas_update" on public.ideas for update using (auth.role() = 'au
 do $$
 declare t text;
 begin
-  foreach t in array array['modules','directors','benefits','badges','pets','locations','company_values','email_templates']
+  foreach t in array array['modules','directors','managers','benefits','badges','pets','locations','company_values','email_templates']
   loop
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "%s_read" on public.%I', t, t);

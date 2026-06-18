@@ -5,6 +5,7 @@ import {
   getBenefits,
   getDirectors,
   getLocations,
+  getManagers,
   getPets,
   getValues,
   type CollectionName,
@@ -16,6 +17,7 @@ import { CollectionEditor } from "@/components/admin/CollectionEditor";
 export const metadata: Metadata = { title: "Admin · Content Library" };
 
 const TABS: { key: CollectionName; label: string; icon: string }[] = [
+  { key: "managers", label: "Managers", icon: "supervisor_account" },
   { key: "directors", label: "Directors", icon: "groups" },
   { key: "benefits", label: "Benefits", icon: "redeem" },
   { key: "pets", label: "Pets", icon: "pets" },
@@ -33,7 +35,7 @@ export default async function LibraryPage({
 }) {
   const { tab } = await searchParams;
   const active: CollectionName =
-    (TABS.find((t) => t.key === tab)?.key as CollectionName) ?? "directors";
+    (TABS.find((t) => t.key === tab)?.key as CollectionName) ?? "managers";
 
   const items = await loadCollection(active);
 
@@ -74,6 +76,8 @@ export default async function LibraryPage({
 
 async function loadCollection(name: CollectionName): Promise<Item[]> {
   switch (name) {
+    case "managers":
+      return (await getManagers()) as unknown as Item[];
     case "directors":
       return (await getDirectors()) as unknown as Item[];
     case "benefits":

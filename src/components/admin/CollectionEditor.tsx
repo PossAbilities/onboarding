@@ -21,7 +21,8 @@ type FieldType =
   | "bool"
   | "tags"
   | "icon"
-  | "image";
+  | "image"
+  | "video";
 
 interface FieldSpec {
   key: string;
@@ -109,6 +110,22 @@ const SPECS: Record<CollectionName, Spec> = {
       { key: "icon", label: "Icon (Material Symbol name)", type: "icon" },
       { key: "xp", label: "XP value", type: "number" },
       { key: "criteria", label: "How it's earned", type: "text" },
+    ],
+  },
+  managers: {
+    singular: "Manager",
+    titleKey: "name",
+    subtitleKey: "role",
+    imageKey: "photoUrl",
+    hasOrder: true,
+    fields: [
+      { key: "name", label: "Name", type: "text" },
+      { key: "role", label: "Job role / title", type: "text" },
+      { key: "department", label: "Department", type: "text" },
+      { key: "bio", label: "Short intro / bio", type: "textarea" },
+      { key: "photoUrl", label: "Photo", type: "image", shape: "avatar" },
+      { key: "videoUrl", label: "Intro video", type: "video" },
+      { key: "calendarUrl", label: "Booking link (optional)", type: "text" },
     ],
   },
   values: {
@@ -375,6 +392,18 @@ function FieldInput({
         accept="image/*"
         kind="image"
         shape={field.shape ?? "square"}
+      />
+    );
+  }
+  if (field.type === "video") {
+    return (
+      <MediaUpload
+        label={field.label}
+        value={(value as string) ?? null}
+        onChange={(url) => onChange(url)}
+        accept="video/mp4,video/webm,video/quicktime"
+        kind="video"
+        shape="wide"
       />
     );
   }
