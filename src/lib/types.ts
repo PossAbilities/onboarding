@@ -147,6 +147,18 @@ export interface Invite {
   createdAt: string;
 }
 
+export type EmailTrigger = "welcome" | "reminder" | "completion" | "custom";
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  trigger: EmailTrigger;
+  subject: string;
+  html: string;
+  enabled: boolean;
+  updatedAt: string | null;
+}
+
 /** A PossAbilities value used in the culture Values-Match game. */
 export interface CompanyValue {
   id: string;

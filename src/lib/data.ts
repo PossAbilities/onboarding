@@ -3,13 +3,14 @@ import { isSupabaseConfigured } from "./config";
 import { createSupabaseServerClient } from "./supabase/server";
 import { computeJourney } from "./journey";
 import { demoState } from "./demo-store";
-import { MODULES } from "./seed";
+import { EMAIL_TEMPLATES, MODULES } from "./seed";
 import type {
   Badge,
   Benefit,
   CollectionName,
   CompanyValue,
   Director,
+  EmailTemplate,
   Idea,
   IdeaStatus,
   JourneyState,
@@ -224,6 +225,74 @@ export async function reorderCollection(
 }
 
 const byOrder = (a: { order: number }, b: { order: number }) => a.order - b.order;
+
+/* ───────────────────────── Email templates ───────────────────────── */
+
+export async function getEmailTemplates(): Promise<EmailTemplate[]> {
+  if (!isSupabaseConfigured) return [...demoState().emailTemplates];
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("email_templates")
+    .select("*")
+    .order("name");
+  // Empty table → offer the default templates as a starting point.
+  if (!data || data.length === 0) return EMAIL_TEMPLATES.map((t) => ({ ...t }));
+  return data.map(mapEmailRow);
+}
+
+export async function getEmailTemplate(
+  id: string,
+): Promise<EmailTemplate | undefined> {
+  return (await getEmailTemplates()).find((t) => t.id === id);
+}
+
+export async function saveEmailTemplate(t: EmailTemplate): Promise<void> {
+  const withTime = { ...t, updatedAt: new Date().toISOString() };
+  if (!isSupabaseConfigured) {
+    const arr = demoState().emailTemplates;
+    const i = arr.findIndex((x) => x.id === t.id);
+    if (i >= 0) arr[i] = withTime;
+    else arr.push(withTime);
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("email_templates").upsert(
+    {
+      id: withTime.id,
+      name: withTime.name,
+      trigger: withTime.trigger,
+      subject: withTime.subject,
+      html: withTime.html,
+      enabled: withTime.enabled,
+      updated_at: withTime.updatedAt,
+    },
+    { onConflict: "id" },
+  );
+}
+
+export async function createEmailTemplate(): Promise<EmailTemplate> {
+  const t: EmailTemplate = {
+    id: `email-${Date.now()}`,
+    name: "New email",
+    trigger: "custom",
+    subject: "Subject line — try a {{first_name}} merge tag",
+    html: '<div style="font-family:Arial,sans-serif;padding:24px;color:#1e1b1c;">\n  <h1>Hi {{first_name}},</h1>\n  <p>Write your email here. Insert merge tags from the palette.</p>\n</div>',
+    enabled: false,
+    updatedAt: null,
+  };
+  await saveEmailTemplate(t);
+  return t;
+}
+
+export async function deleteEmailTemplate(id: string): Promise<void> {
+  if (!isSupabaseConfigured) {
+    const state = demoState();
+    state.emailTemplates = state.emailTemplates.filter((x) => x.id !== id);
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("email_templates").delete().eq("id", id);
+}
 
 /* ───────────────────────── Journey / progress ───────────────────── */
 
@@ -672,6 +741,17 @@ function mapBadgeRow(r: any): Badge {
     icon: r.icon ?? "star",
     xp: r.xp ?? 0,
     criteria: r.criteria ?? "",
+  };
+}
+function mapEmailRow(r: any): EmailTemplate {
+  return {
+    id: r.id,
+    name: r.name,
+    trigger: r.trigger ?? "custom",
+    subject: r.subject ?? "",
+    html: r.html ?? "",
+    enabled: r.enabled ?? false,
+    updatedAt: r.updated_at ?? null,
   };
 }
 function mapValueRow(r: any): CompanyValue {

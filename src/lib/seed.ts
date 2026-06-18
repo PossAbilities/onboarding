@@ -3,6 +3,7 @@ import type {
   Benefit,
   CompanyValue,
   Director,
+  EmailTemplate,
   Idea,
   Location,
   Module,
@@ -27,6 +28,92 @@ const SAMPLE_VIDEO_2 =
 const img = (seed: string, w = 800, h = 480) =>
   `https://picsum.photos/seed/${seed}/${w}/${h}`;
 const avatar = (n: number) => `https://i.pravatar.cc/300?img=${n}`;
+
+/** Branded, email-safe (inline-styled) wrapper for the default templates. */
+function emailShell(body: string): string {
+  return `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#f5eced;font-family:Arial,Helvetica,sans-serif;color:#1e1b1c;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5eced;padding:24px 0;">
+      <tr><td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;max-width:600px;width:100%;">
+          <tr><td style="background:linear-gradient(135deg,#48065a,#ec008c);padding:28px 32px;">
+            <span style="font-size:24px;font-weight:900;color:#ffffff;">Poss<span style="color:#ffd9e4;">Abilities</span></span>
+          </td></tr>
+          <tr><td style="padding:32px;">${body}</td></tr>
+          <tr><td style="padding:20px 32px;background:#fbf1f2;color:#80737f;font-size:12px;">
+            PossAbilities CIC · Live The Life You Choose<br/>
+            You're receiving this because you're part of the {{journey_name}}.
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+}
+
+const button = (label: string) =>
+  `<a href="{{login_url}}" style="display:inline-block;background:#ec008c;color:#ffffff;font-weight:bold;text-decoration:none;padding:14px 28px;border-radius:12px;">${label}</a>`;
+
+export const EMAIL_TEMPLATES: EmailTemplate[] = [
+  {
+    id: "email-welcome",
+    name: "Welcome email",
+    trigger: "welcome",
+    subject: "Welcome to {{company}}, {{first_name}} 🎉",
+    enabled: true,
+    updatedAt: null,
+    html: emailShell(
+      `<h1 style="margin:0 0 12px;font-size:26px;color:#290036;">Welcome aboard, {{first_name}}!</h1>
+       <p style="font-size:16px;line-height:24px;color:#4e434e;">
+         We're thrilled to have you join us as a <strong>{{role}}</strong>. Your
+         <strong>{{journey_name}}</strong> is ready and waiting — a gamified journey
+         of short missions to help you settle in and meet the team.
+       </p>
+       <p style="font-size:16px;line-height:24px;color:#4e434e;">
+         Sign in to start your first mission and earn your first badge.
+       </p>
+       <p style="margin:24px 0;">${button("Start my journey")}</p>
+       <p style="font-size:14px;color:#80737f;">Any questions? Just reply to this email.</p>`,
+    ),
+  },
+  {
+    id: "email-reminder",
+    name: "Progress reminder",
+    trigger: "reminder",
+    subject: "{{first_name}}, your induction is waiting for you",
+    enabled: true,
+    updatedAt: null,
+    html: emailShell(
+      `<h1 style="margin:0 0 12px;font-size:24px;color:#290036;">You're {{progress_percent}} of the way there!</h1>
+       <p style="font-size:16px;line-height:24px;color:#4e434e;">
+         Hi {{first_name}}, just a friendly nudge — your next mission,
+         <strong>{{next_mission}}</strong>, is ready whenever you are.
+       </p>
+       <p style="font-size:16px;line-height:24px;color:#4e434e;">
+         Please aim to finish your {{journey_name}} by <strong>{{due_date}}</strong>.
+       </p>
+       <p style="margin:24px 0;">${button("Resume my journey")}</p>`,
+    ),
+  },
+  {
+    id: "email-completion",
+    name: "Completion / certificate",
+    trigger: "completion",
+    subject: "Congratulations {{first_name}} — you did it! 🏆",
+    enabled: true,
+    updatedAt: null,
+    html: emailShell(
+      `<h1 style="margin:0 0 12px;font-size:26px;color:#ec008c;">Congratulations, {{first_name}}!</h1>
+       <p style="font-size:16px;line-height:24px;color:#4e434e;">
+         You've completed the <strong>{{journey_name}}</strong> — every mission, done.
+         Your official completion certificate is ready to download from your journey.
+       </p>
+       <p style="margin:24px 0;">${button("View my certificate")}</p>
+       <p style="font-size:14px;color:#80737f;">Welcome to the team, properly. 💜</p>`,
+    ),
+  },
+];
 
 /** PossAbilities values (brand manual) — drive the culture Values-Match game. */
 export const VALUES: CompanyValue[] = [

@@ -13,6 +13,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/starters", label: "Manage Starters", icon: "group_add" },
   { href: "/admin/content", label: "Journey Content", icon: "edit_document" },
   { href: "/admin/library", label: "Content Library", icon: "perm_media" },
+  { href: "/admin/emails", label: "Email Templates", icon: "mail" },
   { href: "/admin/analytics", label: "Analytics", icon: "monitoring" },
   { href: "/admin/settings", label: "System Config", icon: "settings" },
 ];

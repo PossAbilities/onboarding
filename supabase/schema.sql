@@ -96,6 +96,17 @@ create table if not exists public.company_values (
   "order" integer default 0
 );
 
+-- HTML email templates (with {{merge_tags}}) managed from the admin dashboard.
+create table if not exists public.email_templates (
+  id text primary key,
+  name text not null,
+  trigger text default 'custom',
+  subject text,
+  html text,
+  enabled boolean default false,
+  updated_at timestamptz default now()
+);
+
 -- ── Per-user dynamic data ───────────────────────────────────────────────────
 create table if not exists public.progress (
   user_id uuid not null references public.profiles (id) on delete cascade,

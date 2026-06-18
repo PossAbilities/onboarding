@@ -4,17 +4,20 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import {
   bulkInvite,
+  createEmailTemplate,
   createModule,
   deleteCollectionItem,
+  deleteEmailTemplate,
   deleteModule,
   inviteStarter,
   reorderCollection,
   reorderModules,
   saveCollectionItem,
+  saveEmailTemplate,
   saveModule,
   type CollectionName,
 } from "@/lib/data";
-import type { Module } from "@/lib/types";
+import type { EmailTemplate, Module } from "@/lib/types";
 
 export type InviteState =
   | { ok: boolean; message: string }
@@ -136,6 +139,38 @@ export async function reorderCollectionAction(
   await requireAdmin();
   await reorderCollection(name, ids);
   revalidateLibrary();
+}
+
+/* ───────────────────────── Email templates ───────────────────────── */
+
+export async function saveEmailTemplateAction(
+  t: EmailTemplate,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  if (!t?.id) return { ok: false, message: "Missing template id." };
+  if (!t.name?.trim()) return { ok: false, message: "Give the template a name." };
+  if (!t.subject?.trim()) return { ok: false, message: "A subject line is required." };
+  await saveEmailTemplate(t);
+  revalidatePath("/admin/emails");
+  return { ok: true, message: "Email template saved." };
+}
+
+export async function createEmailTemplateAction(): Promise<{
+  template: EmailTemplate;
+}> {
+  await requireAdmin();
+  const template = await createEmailTemplate();
+  revalidatePath("/admin/emails");
+  return { template };
+}
+
+export async function deleteEmailTemplateAction(
+  id: string,
+): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  await deleteEmailTemplate(id);
+  revalidatePath("/admin/emails");
+  return { ok: true, message: "Template deleted." };
 }
 
 /** Bulk import from pasted CSV: `name,email,role` per line (header optional). */

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/config";
 import { Icon } from "@/components/ui/Icon";
 import { Chip } from "@/components/ui/Chip";
@@ -53,11 +54,22 @@ export default function SettingsPage() {
             note="Hidden collectibles unlock the Navigator badge."
             on
           />
-          <Toggle
-            label="Email reminders"
-            note="Nudge starters who stall for 3+ days."
-            on={isSupabaseConfigured}
-          />
+          <Link
+            href="/admin/emails"
+            className="-mx-2 flex items-center justify-between gap-4 rounded-lg px-2 py-3 transition-colors hover:bg-surface-container"
+          >
+            <div>
+              <p className="flex items-center gap-1.5 font-bold text-on-surface">
+                <Icon name="mail" size={20} className="text-secondary" />
+                Email templates &amp; reminders
+              </p>
+              <p className="text-sm text-on-surface-variant">
+                Design the HTML emails sent to starters — welcome, reminders,
+                completion. Edit, preview and manage merge-tags.
+              </p>
+            </div>
+            <Icon name="arrow_forward" size={22} className="text-on-surface-variant" />
+          </Link>
         </div>
       </div>
 

@@ -147,9 +147,20 @@ reorder and delete items, and **upload photos** for directors, pets and
 locations (or paste a URL). Uploads go to the Supabase Storage `media` bucket
 when connected (auto-created, public) or an in-preview data URL in demo mode.
 
+**Admin → Email Templates** is a full HTML email editor: create/edit/delete
+templates, insert **system merge-tags** (`{{first_name}}`, `{{journey_name}}`,
+`{{progress_percent}}`, `{{next_mission}}`, `{{due_date}}`, `{{login_url}}`, …),
+and see a **live preview** (desktop/mobile) rendered with sample data. Ships
+with Welcome, Reminder and Completion templates.
+
+> **Sending:** templates are designed and stored here; welcome emails already
+> go out via Supabase invites. To send reminder/completion emails on a schedule,
+> wire an email provider (e.g. [Resend](https://resend.com)) to `renderTemplate`
+> in `src/lib/email.ts` — the merge-tag substitution is already done for you.
+
 Prefer editing in code? `src/lib/seed.ts` holds the starting catalogue
-(missions, directors, benefits, pets, locations, badges) and is the seed for
-both modes.
+(missions, directors, benefits, pets, locations, badges, values, email
+templates) and is the seed for both modes.
 
 ## 🧩 Notes & roadmap
 - Demo mode stores writes in server memory — great for previews, not durable.
