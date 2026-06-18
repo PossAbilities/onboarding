@@ -5,6 +5,7 @@
 
 export type ModuleKind =
   | "video" // welcome video
+  | "photo" // upload your profile / ID photo
   | "directors" // meet the directors
   | "manager" // meet your (assigned) manager
   | "culture" // culture & values

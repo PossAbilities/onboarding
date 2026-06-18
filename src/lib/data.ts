@@ -669,6 +669,22 @@ export async function inviteStarter(
   return { ok: true, message: `Invitation emailed to ${input.email}.` };
 }
 
+/** Set the signed-in user's profile photo (used for their avatar + ID badge). */
+export async function updateMyAvatar(
+  profile: Profile,
+  url: string,
+): Promise<void> {
+  if (!isSupabaseConfigured) {
+    demoState().employeeAvatarUrl = url;
+    return;
+  }
+  const supabase = await createSupabaseServerClient();
+  await supabase
+    .from("profiles")
+    .update({ avatar_url: url, last_activity_at: new Date().toISOString() })
+    .eq("id", profile.id);
+}
+
 /** Update a starter's department / manager / role. */
 export async function updateStarter(
   id: string,

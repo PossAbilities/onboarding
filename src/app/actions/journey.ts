@@ -6,6 +6,7 @@ import {
   collectEasterEgg,
   completeModule,
   submitIdea,
+  updateMyAvatar,
   voteIdea,
 } from "@/lib/data";
 
@@ -16,6 +17,19 @@ export async function completeModuleAction(moduleId: string, score?: number) {
   revalidatePath("/modules", "layout");
   revalidatePath("/badges");
   return result;
+}
+
+/** Save the user's profile photo and complete the photo module. */
+export async function saveProfilePhotoAction(moduleId: string, url: string) {
+  const profile = await requireProfile();
+  if (!url) return { ok: false as const, message: "No photo provided." };
+  await updateMyAvatar(profile, url);
+  const result = await completeModule(profile, moduleId);
+  revalidatePath("/journey");
+  revalidatePath("/modules", "layout");
+  revalidatePath("/badges");
+  revalidatePath("/leaderboard");
+  return { ok: true as const, result };
 }
 
 export async function collectEggAction(eggId: string) {

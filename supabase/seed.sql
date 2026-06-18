@@ -15,14 +15,15 @@ on conflict (id) do update set name = excluded.name, description = excluded.desc
 
 insert into public.modules (id, slug, "order", level, kind, title, short_title, description, est_minutes, required, badge_id, reward_xp, hero_media_url, hero_poster) values
   ('m-welcome','welcome',1,1,'video','Mission 01: The Welcome','Welcome Home','A message from our leadership about our mission and the road ahead.',5,true,'first-contact',50,'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4','https://picsum.photos/seed/welcome-hero/1200/675'),
-  ('m-directors','meet-the-directors',2,2,'directors','Mission 02: Meet the Directors','Meet the Directors','The people steering the ship — and cheering you on.',6,true,'people-person',80,null,'https://picsum.photos/seed/directors-hero/1200/675'),
-  ('m-manager','meet-your-manager',3,3,'manager','Mission 03: Meet Your Manager','Meet Your Manager','Meet the person who''ll have your back day to day.',5,true,null,80,null,'https://picsum.photos/seed/manager-hero/1200/675'),
-  ('m-culture','culture',4,4,'culture','Mission 04: Our Culture & Values','Our Culture','Step into the heart of PossAbilities.',12,true,'culture-champion',150,'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4','https://picsum.photos/seed/culture-hero/1200/675'),
-  ('m-benefits','benefits',5,5,'benefits','Mission 05: Your Life, Your Perks','Benefits','We believe that when you thrive, we thrive.',8,true,null,90,null,'https://picsum.photos/seed/benefits-hero/1200/675'),
-  ('m-bigidea','big-idea',6,6,'bigidea','Mission 06: The BIG Idea Portal','The BIG Idea','Got a better way to do things? We want to hear it!',6,false,'the-pioneer',100,null,'https://picsum.photos/seed/bigidea-hero/1200/675'),
-  ('m-pets','very-important-pets',7,7,'pets','Mission 07: Very Important Pets','V.I.P. Wellbeing','Our furry teammates are a huge part of our culture.',4,false,null,60,null,'https://picsum.photos/seed/pets-hero/1200/675'),
-  ('m-locations','locations',8,8,'locations','Mission 08: Locations & Services','Locations','Explore where we work and the services we deliver.',5,false,null,60,null,'https://picsum.photos/seed/locations-hero/1200/675'),
-  ('m-certificate','certificate',9,9,'certificate','Mission 09: Reach the Summit','Certificate','Finalise your induction and download your certificate.',3,true,'summit',300,null,'https://picsum.photos/seed/summit-hero/1200/675')
+  ('m-photo','your-photo',2,2,'photo','Mission 02: Your Photo','Your Photo','Add a passport-style headshot for your staff profile and ID badge.',3,true,null,50,null,null),
+  ('m-directors','meet-the-directors',3,3,'directors','Mission 03: Meet the Directors','Meet the Directors','The people steering the ship — and cheering you on.',6,true,'people-person',80,null,'https://picsum.photos/seed/directors-hero/1200/675'),
+  ('m-manager','meet-your-manager',4,4,'manager','Mission 04: Meet Your Manager','Meet Your Manager','Meet the person who''ll have your back day to day.',5,true,null,80,null,'https://picsum.photos/seed/manager-hero/1200/675'),
+  ('m-culture','culture',5,5,'culture','Mission 05: Our Culture & Values','Our Culture','Step into the heart of PossAbilities.',12,true,'culture-champion',150,'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4','https://picsum.photos/seed/culture-hero/1200/675'),
+  ('m-benefits','benefits',6,6,'benefits','Mission 06: Your Life, Your Perks','Benefits','We believe that when you thrive, we thrive.',8,true,null,90,null,'https://picsum.photos/seed/benefits-hero/1200/675'),
+  ('m-bigidea','big-idea',7,7,'bigidea','Mission 07: The BIG Idea Portal','The BIG Idea','Got a better way to do things? We want to hear it!',6,false,'the-pioneer',100,null,'https://picsum.photos/seed/bigidea-hero/1200/675'),
+  ('m-pets','very-important-pets',8,8,'pets','Mission 08: Very Important Pets','V.I.P. Wellbeing','Our furry teammates are a huge part of our culture.',4,false,null,60,null,'https://picsum.photos/seed/pets-hero/1200/675'),
+  ('m-locations','locations',9,9,'locations','Mission 09: Locations & Services','Locations','Explore where we work and the services we deliver.',5,false,null,60,null,'https://picsum.photos/seed/locations-hero/1200/675'),
+  ('m-certificate','certificate',10,10,'certificate','Mission 10: Reach the Summit','Certificate','Finalise your induction and download your certificate.',3,true,'summit',300,null,'https://picsum.photos/seed/summit-hero/1200/675')
 on conflict (id) do update set title = excluded.title, description = excluded.description, hero_media_url = excluded.hero_media_url, hero_poster = excluded.hero_poster;
 
 insert into public.directors (id, name, role, bio, photo_url, "order") values

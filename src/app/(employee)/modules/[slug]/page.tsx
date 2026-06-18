@@ -4,6 +4,7 @@ import { requireProfile } from "@/lib/auth";
 import { getJourneyState, getModuleBySlug, getModules } from "@/lib/data";
 import { statusFor } from "@/lib/journey";
 import { WelcomeModule } from "@/components/modules/views/WelcomeModule";
+import { PhotoModule } from "@/components/modules/views/PhotoModule";
 import { DirectorsModule } from "@/components/modules/views/DirectorsModule";
 import { ManagerModule } from "@/components/modules/views/ManagerModule";
 import { CultureModule } from "@/components/modules/views/CultureModule";
@@ -56,6 +57,8 @@ export default async function ModulePage({
   switch (mod.kind) {
     case "video":
       return <WelcomeModule {...common} />;
+    case "photo":
+      return <PhotoModule {...common} />;
     case "directors":
       return <DirectorsModule {...common} />;
     case "manager":

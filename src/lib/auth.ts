@@ -17,7 +17,11 @@ export async function getCurrentProfile(): Promise<Profile | null> {
     const store = await cookies();
     const role = store.get(DEMO_COOKIE)?.value;
     if (role === "admin") return DEMO_ADMIN;
-    if (role === "employee") return DEMO_USER;
+    if (role === "employee") {
+      const { demoState } = await import("./demo-store");
+      const avatar = demoState().employeeAvatarUrl;
+      return avatar ? { ...DEMO_USER, avatarUrl: avatar } : DEMO_USER;
+    }
     return null;
   }
 

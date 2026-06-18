@@ -55,6 +55,8 @@ interface DemoState {
   values: CompanyValue[];
   managers: Manager[];
   emailTemplates: EmailTemplate[];
+  // Demo employee's uploaded profile photo (overrides the seed avatar).
+  employeeAvatarUrl: string | null;
 }
 
 function seedState(): DemoState {
@@ -101,6 +103,7 @@ function seedState(): DemoState {
     values: VALUES.map((v) => ({ ...v })),
     managers: MANAGERS.map((m) => ({ ...m })),
     emailTemplates: EMAIL_TEMPLATES.map((e) => ({ ...e })),
+    employeeAvatarUrl: null,
   };
 }
 

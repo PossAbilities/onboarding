@@ -13,6 +13,7 @@ export const metadata: Metadata = { title: "My Journey" };
 
 const KIND_ICON: Record<string, string> = {
   video: "play_circle",
+  photo: "photo_camera",
   directors: "groups",
   manager: "supervisor_account",
   culture: "diversity_3",
