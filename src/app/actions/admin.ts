@@ -11,7 +11,10 @@ import {
   deleteModule,
   createDocument,
   deleteDocument,
+  getAdmins,
+  inviteAdmin,
   inviteStarter,
+  revokeAdmin,
   reorderCollection,
   reorderModules,
   saveCollectionItem,
@@ -43,6 +46,50 @@ import type {
 export type InviteState =
   | { ok: boolean; message: string }
   | undefined;
+
+/** Invite a brand-new admin, or promote an existing user to admin. */
+export async function inviteAdminAction(
+  _prev: InviteState,
+  formData: FormData,
+): Promise<InviteState> {
+  const admin = await requireAdmin();
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const roleTag = String(formData.get("roleTag") ?? "").trim() || "Administrator";
+
+  if (!fullName || !email) {
+    return { ok: false, message: "Name and email are required." };
+  }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return { ok: false, message: "Please enter a valid email address." };
+  }
+
+  const res = await inviteAdmin(admin.id, { email, fullName, roleTag });
+  revalidatePath("/admin/admins");
+  revalidatePath("/admin/starters");
+  return res;
+}
+
+/**
+ * Remove someone's admin access. Refuses to remove your own access or the very
+ * last admin, so the platform can never be locked out.
+ */
+export async function revokeAdminAction(
+  userId: string,
+): Promise<{ ok: boolean; message: string }> {
+  const admin = await requireAdmin();
+  if (userId === admin.id) {
+    return { ok: false, message: "You can't remove your own admin access." };
+  }
+  const admins = await getAdmins();
+  if (admins.length <= 1) {
+    return { ok: false, message: "There must be at least one admin." };
+  }
+  const res = await revokeAdmin(userId);
+  revalidatePath("/admin/admins");
+  revalidatePath("/admin/starters");
+  return res;
+}
 
 export async function inviteStarterAction(
   _prev: InviteState,

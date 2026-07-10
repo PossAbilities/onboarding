@@ -1000,6 +1000,130 @@ export async function getStarterStats(): Promise<StarterStats> {
   };
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Admin users                                                               */
+/* -------------------------------------------------------------------------- */
+
+export async function getAdmins(): Promise<Profile[]> {
+  if (!isSupabaseConfigured) return demoState().admins;
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("is_admin", true)
+    .order("full_name");
+  const { mapProfileRow } = await import("./auth");
+  return (data ?? []).map(mapProfileRow);
+}
+
+/**
+ * Grant admin access to `email`. If they already have a profile (e.g. they are
+ * an existing starter) they are simply promoted; otherwise they are invited by
+ * email and their new profile is created with `is_admin` already set.
+ */
+export async function inviteAdmin(
+  invitedBy: string,
+  input: { email: string; fullName: string; roleTag: string },
+): Promise<{ ok: boolean; message: string }> {
+  if (!isSupabaseConfigured) {
+    const state = demoState();
+    if (state.admins.some((a) => a.email === input.email)) {
+      return { ok: false, message: `${input.email} is already an admin.` };
+    }
+    const existing = state.starters.find((s) => s.email === input.email);
+    if (existing) {
+      existing.isAdmin = true;
+      state.starters = state.starters.filter((s) => s.email !== input.email);
+      state.admins.push(existing);
+      return { ok: true, message: `${input.fullName} is now an admin.` };
+    }
+    state.admins.push({
+      id: `a-${Date.now()}`,
+      fullName: input.fullName,
+      email: input.email,
+      roleTag: input.roleTag,
+      department: null,
+      managerId: null,
+      avatarUrl: null,
+      isAdmin: true,
+      journeyPoints: 0,
+      status: "invited",
+      startedAt: null,
+      lastActivityAt: null,
+      invitedBy,
+    });
+    return { ok: true, message: `Admin invitation sent to ${input.email}.` };
+  }
+
+  const { createSupabaseAdminClient } = await import("./supabase/admin");
+  const { siteUrl } = await import("./config");
+  const admin = createSupabaseAdminClient();
+
+  // Already has a profile? Promote in place rather than re-inviting.
+  const { data: existing } = await admin
+    .from("profiles")
+    .select("id, is_admin, full_name")
+    .eq("email", input.email)
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.is_admin) {
+      return { ok: false, message: `${input.email} is already an admin.` };
+    }
+    const { error } = await admin
+      .from("profiles")
+      .update({ is_admin: true, role_tag: input.roleTag })
+      .eq("id", existing.id);
+    if (error) return { ok: false, message: error.message };
+    return {
+      ok: true,
+      message: `${existing.full_name ?? input.email} now has admin access.`,
+    };
+  }
+
+  const { data, error } = await admin.auth.admin.inviteUserByEmail(input.email, {
+    redirectTo: `${siteUrl}/accept-invite`,
+    data: { full_name: input.fullName, role_tag: input.roleTag },
+  });
+  if (error) return { ok: false, message: error.message };
+  if (data.user) {
+    await admin.from("profiles").upsert({
+      id: data.user.id,
+      email: input.email,
+      full_name: input.fullName,
+      role_tag: input.roleTag,
+      is_admin: true,
+      status: "active",
+      invited_by: invitedBy,
+    });
+  }
+  return { ok: true, message: `Admin invitation emailed to ${input.email}.` };
+}
+
+/** Remove admin access. The profile stays — they simply become a normal user. */
+export async function revokeAdmin(
+  userId: string,
+): Promise<{ ok: boolean; message: string }> {
+  if (!isSupabaseConfigured) {
+    const state = demoState();
+    const idx = state.admins.findIndex((a) => a.id === userId);
+    if (idx === -1) return { ok: false, message: "Admin not found." };
+    const [removed] = state.admins.splice(idx, 1);
+    removed.isAdmin = false;
+    state.starters.unshift(removed);
+    return { ok: true, message: `${removed.fullName} is no longer an admin.` };
+  }
+
+  const { createSupabaseAdminClient } = await import("./supabase/admin");
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("profiles")
+    .update({ is_admin: false })
+    .eq("id", userId);
+  if (error) return { ok: false, message: error.message };
+  return { ok: true, message: "Admin access removed." };
+}
+
 export interface InviteInput {
   email: string;
   fullName: string;

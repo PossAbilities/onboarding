@@ -1,6 +1,7 @@
 import {
   BADGES,
   BENEFITS,
+  DEMO_ADMIN,
   DEMO_STARTERS,
   DIRECTORS,
   EMAIL_TEMPLATES,
@@ -54,6 +55,7 @@ interface DemoState {
   ideas: Idea[];
   invites: Invite[];
   starters: Profile[];
+  admins: Profile[];
   easterEggs: string[];
   journeyPoints: number;
   // Full mutable working copy of the mission catalogue. The admin editor reads
@@ -114,6 +116,7 @@ function seedState(): DemoState {
     ideas: [...IDEAS],
     invites: [],
     starters: [...DEMO_STARTERS],
+    admins: [{ ...DEMO_ADMIN }],
     easterEggs: [],
     journeyPoints: 850,
     // Deep clone so edits never mutate the seed constants.

@@ -18,6 +18,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/documents", label: "Documents", icon: "draw" },
   { href: "/admin/integrations", label: "Integrations", icon: "hub" },
   { href: "/admin/analytics", label: "Analytics", icon: "monitoring" },
+  { href: "/admin/admins", label: "Admin Users", icon: "admin_panel_settings" },
   { href: "/admin/settings", label: "System Config", icon: "settings" },
 ];
 
