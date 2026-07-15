@@ -1056,7 +1056,6 @@ export async function inviteAdmin(
   }
 
   const { createSupabaseAdminClient } = await import("./supabase/admin");
-  const { siteUrl } = await import("./config");
   const admin = createSupabaseAdminClient();
 
   // Already has a profile? Promote in place rather than re-inviting.
@@ -1081,14 +1080,16 @@ export async function inviteAdmin(
     };
   }
 
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(input.email, {
-    redirectTo: `${siteUrl}/accept-invite`,
-    data: { full_name: input.fullName, role_tag: input.roleTag },
+  const { sendInviteEmail } = await import("./invites");
+  const invite = await sendInviteEmail({
+    email: input.email,
+    fullName: input.fullName,
+    metadata: { full_name: input.fullName, role_tag: input.roleTag },
+    isAdmin: true,
   });
-  if (error) return { ok: false, message: error.message };
-  if (data.user) {
+  if (invite.userId) {
     await admin.from("profiles").upsert({
-      id: data.user.id,
+      id: invite.userId,
       email: input.email,
       full_name: input.fullName,
       role_tag: input.roleTag,
@@ -1097,7 +1098,7 @@ export async function inviteAdmin(
       invited_by: invitedBy,
     });
   }
-  return { ok: true, message: `Admin invitation emailed to ${input.email}.` };
+  return { ok: invite.ok, message: invite.message };
 }
 
 /** Remove admin access. The profile stays — they simply become a normal user. */
@@ -1159,18 +1160,19 @@ export async function inviteStarter(
     return { ok: true, message: `Invitation sent to ${input.email}.` };
   }
 
-  // Real invite: create an auth user with an invite + a profile row.
+  // Real invite: create the auth user + profile, then email the link via Resend.
   const { createSupabaseAdminClient } = await import("./supabase/admin");
-  const { siteUrl } = await import("./config");
+  const { sendInviteEmail } = await import("./invites");
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(input.email, {
-    redirectTo: `${siteUrl}/accept-invite`,
-    data: { full_name: input.fullName, role_tag: input.roleTag },
+
+  const invite = await sendInviteEmail({
+    email: input.email,
+    fullName: input.fullName,
+    metadata: { full_name: input.fullName, role_tag: input.roleTag },
   });
-  if (error) return { ok: false, message: error.message };
-  if (data.user) {
+  if (invite.userId) {
     await admin.from("profiles").upsert({
-      id: data.user.id,
+      id: invite.userId,
       email: input.email,
       full_name: input.fullName,
       role_tag: input.roleTag,
@@ -1181,7 +1183,7 @@ export async function inviteStarter(
       invited_by: invitedBy,
     });
     await admin.from("notifications").insert({
-      user_id: data.user.id,
+      user_id: invite.userId,
       title: "Welcome to PossAbilities! 💜",
       body: "Your induction journey is ready — start with Mission 01.",
       icon: "celebration",
@@ -1189,7 +1191,7 @@ export async function inviteStarter(
       read: false,
     });
   }
-  return { ok: true, message: `Invitation emailed to ${input.email}.` };
+  return { ok: invite.ok, message: invite.message };
 }
 
 /** Build the common token map for integration events about a starter. */
