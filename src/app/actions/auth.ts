@@ -72,11 +72,23 @@ export async function acceptInvite(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  let isAdmin = false;
   if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .maybeSingle();
+    isAdmin = profile?.is_admin ?? false;
+    // Admins are already active; only stamp the journey start for real starters.
     await supabase
       .from("profiles")
-      .update({ status: "active", started_at: new Date().toISOString() })
+      .update(
+        isAdmin
+          ? { status: "active" }
+          : { status: "active", started_at: new Date().toISOString() },
+      )
       .eq("id", user.id);
   }
-  redirect("/journey");
+  redirect(isAdmin ? "/admin" : "/journey");
 }
