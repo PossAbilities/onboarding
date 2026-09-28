@@ -68,7 +68,8 @@ export default async function CandidatePage({
   if (!profile) notFound();
   const [record, references] = await Promise.all([
     getCandidateRecord(id),
-    getReferences(id),
+    // Admin-only page: includes referee links and responses.
+    getReferences(id, { withSecrets: true }),
   ]);
   const rec = record ?? emptyRecord(id);
   const checklist = computeChecklist(rec, references);

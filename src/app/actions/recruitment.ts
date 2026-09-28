@@ -444,7 +444,9 @@ export async function sendReferenceAction(
   userId: string,
 ): Promise<Result> {
   await requireAdmin();
-  const ref = (await getReferences(userId)).find((r) => r.id === refId);
+  const ref = (await getReferences(userId, { withSecrets: true })).find(
+    (r) => r.id === refId,
+  );
   if (!ref) return { ok: false, message: "Reference not found." };
   const profile = await getProfileById(userId);
   const res = await sendReferenceEmail(

@@ -186,7 +186,7 @@ function mapRefRow(r: any): CandidateReference {
     startMonth: r.start_month ?? "",
     endMonth: r.end_month ?? "",
     status: r.status ?? "draft",
-    token: r.token,
+    token: r.token ?? "",
     requestedAt: r.requested_at ?? null,
     lastSentAt: r.last_sent_at ?? null,
     reminderCount: r.reminder_count ?? 0,
@@ -226,27 +226,60 @@ function refToRow(r: CandidateReference) {
 const byCreated = (a: CandidateReference, b: CandidateReference) =>
   a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id);
 
+/**
+ * Columns a signed-in user may read. The referee-form `token` (the only
+ * credential for submitting a reference) and the referee's `response` are
+ * never readable through the normal client — not even by the candidate — so
+ * a candidate can't complete or read their own references.
+ */
+const REF_SAFE_COLUMNS =
+  "id,user_id,kind,referee_name,referee_email,referee_phone,organisation,referee_position,candidate_role,relationship,start_month,end_month,status,requested_at,last_sent_at,reminder_count,received_at,last_error,created_at";
+
+const withoutSecrets = (r: CandidateReference): CandidateReference => ({
+  ...r,
+  token: "",
+  response: null,
+});
+
+/**
+ * A user's references. By default secrets (token, response) are stripped so
+ * the result is safe to render for the candidate. `withSecrets` reads them
+ * via the service role — only for admin views and sending emails.
+ */
 export async function getReferences(
   userId: string,
+  { withSecrets = false }: { withSecrets?: boolean } = {},
 ): Promise<CandidateReference[]> {
   if (!isSupabaseConfigured) {
-    return demoState()
+    const refs = demoState()
       .references.filter((r) => r.userId === userId)
       .sort(byCreated);
+    return withSecrets ? refs.map((r) => ({ ...r })) : refs.map(withoutSecrets);
+  }
+  if (withSecrets) {
+    const admin = await adminClient();
+    const { data } = await admin
+      .from("candidate_references")
+      .select("*")
+      .eq("user_id", userId);
+    return (data ?? []).map(mapRefRow).sort(byCreated);
   }
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("candidate_references")
-    .select("*")
+    .select(REF_SAFE_COLUMNS)
     .eq("user_id", userId);
-  return (data ?? []).map(mapRefRow).sort(byCreated);
+  return (data ?? []).map(mapRefRow).map(withoutSecrets).sort(byCreated);
 }
 
+/** Every reference, without secrets (admin starters list progress). */
 export async function getAllReferences(): Promise<CandidateReference[]> {
-  if (!isSupabaseConfigured) return [...demoState().references];
+  if (!isSupabaseConfigured) return demoState().references.map(withoutSecrets);
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.from("candidate_references").select("*");
-  return (data ?? []).map(mapRefRow);
+  const { data } = await supabase
+    .from("candidate_references")
+    .select(REF_SAFE_COLUMNS);
+  return (data ?? []).map(mapRefRow).map(withoutSecrets);
 }
 
 export type ReferenceInput = Pick<
@@ -273,7 +306,7 @@ export async function saveReferences(
   userId: string,
   input: ReferenceInput[],
 ): Promise<CandidateReference[]> {
-  const existing = await getReferences(userId);
+  const existing = await getReferences(userId, { withSecrets: true });
   const locked = existing.filter((r) => r.status !== "draft");
   const lockedIds = new Set(locked.map((r) => r.id));
 
@@ -454,7 +487,7 @@ export async function sendDraftReferences(
   userId: string,
   candidateName: string,
 ) {
-  const refs = await getReferences(userId);
+  const refs = await getReferences(userId, { withSecrets: true });
   const results = [];
   for (const r of refs.filter((x) => x.status === "draft")) {
     results.push(await sendReferenceEmail(r, candidateName, "request"));

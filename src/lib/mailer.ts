@@ -184,6 +184,13 @@ export async function sendStalledReminders(): Promise<{
   };
 }
 
+const escapeHtml = (s: string) =>
+  s.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  );
+
 /**
  * Reference request / reminder to a referee. `attachmentUrl` (the admin's
  * reference form PDF, if set) is attached by Resend from its public URL.
@@ -199,13 +206,18 @@ export async function sendReferenceTemplate(
   }
   const template = await pickTemplate(kind === "request" ? "reference_request" : "reference_reminder");
   if (!template) return { ok: false, error: "No reference email template." };
-  const merged = { company: "PossAbilities", ...data };
+  const merged: Record<string, string> = { company: "PossAbilities", ...data };
+  // Referee name, organisation etc. are typed by the candidate, so they must be
+  // HTML-escaped before going into the email body.
+  const htmlData = Object.fromEntries(
+    Object.entries(merged).map(([k, v]) => [k, escapeHtml(v)]),
+  );
   const filename =
     attachmentUrl?.split("?")[0].split("/").pop()?.replace(/^\d+-/, "") || "reference-form.pdf";
   return sendEmail({
     to,
     subject: renderTemplate(template.subject, merged),
-    html: renderTemplate(template.html, merged),
+    html: renderTemplate(template.html, htmlData),
     attachments: attachmentUrl ? [{ filename, path: attachmentUrl }] : undefined,
   });
 }

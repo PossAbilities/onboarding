@@ -43,7 +43,17 @@ create index if not exists candidate_references_user_idx on public.candidate_ref
 create index if not exists candidate_references_status_idx on public.candidate_references (status);
 
 grant select on public.candidate_records to authenticated;
-grant select on public.candidate_references to authenticated;
+-- Column-level read access: the referee-form `token` (the only credential for
+-- submitting a reference) and the referee's `response` are never readable by
+-- signed-in users — not even the candidate — so nobody can complete or read
+-- their own references. The app reads those with the service role, for admins.
+revoke select on public.candidate_references from authenticated;
+grant select (
+  id, user_id, kind, referee_name, referee_email, referee_phone, organisation,
+  referee_position, candidate_role, relationship, start_month, end_month,
+  status, requested_at, last_sent_at, reminder_count, received_at, last_error,
+  created_at
+) on public.candidate_references to authenticated;
 grant select, insert, update, delete on public.candidate_records to service_role;
 grant select, insert, update, delete on public.candidate_references to service_role;
 
