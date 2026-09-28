@@ -84,3 +84,15 @@ insert into public.ideas (author_name, author_avatar, title, description, catego
   ('Sarah Jenkins','https://i.pravatar.cc/300?img=48','Paperless Onboarding Flow','Digitise all HR contracts and safety modules for new starters.','People','popular',3199),
   ('Ananya Sharma','https://i.pravatar.cc/300?img=44','Sustainable Packaging Initiative','Replace plastic fillers with biodegradable alternatives.','Sustainability','reviewing',1438)
 on conflict do nothing;
+
+insert into public.staff_videos (id, title, speaker, category, description, video_url, poster_url, "order") values
+  ('vid-support-worker','A day in the life of a Support Worker','Jess, Support Worker','Staff','Jess shares what a typical shift looks like and what she loves about the role.','https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4','',1),
+  ('vid-team-leader','Why I stayed at PossAbilities','Marcus, Team Leader','Staff','Marcus started as a support worker and now leads his own team.','https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4','',2),
+  ('vid-service-user','Living the life I choose','Tom, supported by PossAbilities','People we support','Tom talks about his home, his hobbies and the team who support him.','https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4','',3)
+on conflict (id) do nothing;
+
+insert into public.testimonials (id, name, role, quote, photo_url, "order") values
+  ('tst-1','Sophie','Support Worker, Supported Living','From my very first day I felt part of a family. The training was brilliant and there''s always someone to ask.','https://i.pravatar.cc/300?img=45',1),
+  ('tst-2','Daniel','Day Services Coordinator','No two days are the same. Seeing the people we support achieve their goals is the best feeling in the world.','https://i.pravatar.cc/300?img=52',2),
+  ('tst-3','Margaret','Parent of someone we support','The team treat my son with such kindness and respect. He''s more confident and independent than ever.','https://i.pravatar.cc/300?img=47',3)
+on conflict (id) do nothing;

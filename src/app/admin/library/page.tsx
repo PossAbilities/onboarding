@@ -7,7 +7,9 @@ import {
   getLocations,
   getManagers,
   getPets,
+  getTestimonials,
   getValues,
+  getVideos,
   type CollectionName,
 } from "@/lib/data";
 import { Icon } from "@/components/ui/Icon";
@@ -17,6 +19,8 @@ import { CollectionEditor } from "@/components/admin/CollectionEditor";
 export const metadata: Metadata = { title: "Admin · Content Library" };
 
 const TABS: { key: CollectionName; label: string; icon: string }[] = [
+  { key: "videos", label: "Videos", icon: "smart_display" },
+  { key: "testimonials", label: "Testimonials", icon: "format_quote" },
   { key: "directors", label: "Directors", icon: "groups" },
   { key: "benefits", label: "Benefits", icon: "redeem" },
   { key: "pets", label: "Pets", icon: "pets" },
@@ -34,7 +38,7 @@ export default async function LibraryPage({
 }) {
   const { tab } = await searchParams;
   const active: CollectionName =
-    (TABS.find((t) => t.key === tab)?.key as CollectionName) ?? "directors";
+    (TABS.find((t) => t.key === tab)?.key as CollectionName) ?? "videos";
 
   const items = await loadCollection(active);
 
@@ -43,8 +47,8 @@ export default async function LibraryPage({
       <h1 className="text-3xl font-black text-on-surface">Content Library</h1>
       <p className="mt-1 max-w-2xl text-on-surface-variant">
         Total control of every piece of content on the journey — add, edit,
-        reorder, delete and upload photos for your directors, benefits, pets,
-        locations and badges. Changes publish instantly.
+        reorder, delete and upload media for your staff &amp; service user videos,
+        testimonials, directors, benefits, pets, locations and badges. Changes publish instantly.
       </p>
 
       {/* Tabs */}
@@ -89,5 +93,9 @@ async function loadCollection(name: CollectionName): Promise<Item[]> {
       return (await getBadges()) as unknown as Item[];
     case "values":
       return (await getValues()) as unknown as Item[];
+    case "videos":
+      return (await getVideos()) as unknown as Item[];
+    case "testimonials":
+      return (await getTestimonials()) as unknown as Item[];
   }
 }

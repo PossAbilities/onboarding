@@ -30,6 +30,8 @@ import type {
   Pet,
   Profile,
   SignDocument,
+  StaffVideo,
+  Testimonial,
 } from "./types";
 
 export type { CollectionName };
@@ -179,6 +181,19 @@ export async function getValues(): Promise<CompanyValue[]> {
   return (data ?? []).map(mapValueRow);
 }
 
+export async function getVideos(): Promise<StaffVideo[]> {
+  if (!isSupabaseConfigured) return [...demoState().videos].sort(byOrder);
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("staff_videos").select("*").order("order");
+  return (data ?? []).map(mapVideoRow);
+}
+export async function getTestimonials(): Promise<Testimonial[]> {
+  if (!isSupabaseConfigured) return [...demoState().testimonials].sort(byOrder);
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("testimonials").select("*").order("order");
+  return (data ?? []).map(mapTestimonialRow);
+}
+
 export async function getManagers(): Promise<Manager[]> {
   if (!isSupabaseConfigured) return [...demoState().managers].sort(byOrder);
   const supabase = await createSupabaseServerClient();
@@ -194,7 +209,9 @@ export async function getManagerById(
 
 /** `values` maps to the `company_values` table (`values` is a SQL keyword). */
 function tableFor(name: CollectionName): string {
-  return name === "values" ? "company_values" : name;
+  if (name === "values") return "company_values";
+  if (name === "videos") return "staff_videos";
+  return name;
 }
 
 /** Create or update one item in a content collection. */
@@ -634,7 +651,13 @@ export async function getEmailTemplates(): Promise<EmailTemplate[]> {
     .order("name");
   // Empty table → offer the default templates as a starting point.
   if (!data || data.length === 0) return EMAIL_TEMPLATES.map((t) => ({ ...t }));
-  return data.map(mapEmailRow);
+  const rows = data.map(mapEmailRow);
+  // Surface newer default templates (e.g. reference requests) that haven't
+  // been saved to the database yet, so they can be edited.
+  const missing = EMAIL_TEMPLATES.filter(
+    (t) => !rows.some((r) => r.id === t.id || r.trigger === t.trigger),
+  ).map((t) => ({ ...t }));
+  return [...rows, ...missing];
 }
 
 export async function getEmailTemplate(
@@ -1131,19 +1154,38 @@ export interface InviteInput {
   roleTag: string;
   department?: string | null;
   managerId?: string | null;
+  /** Recruitment details (address, DOB, NI number, salary…) for the offer letter. */
+  candidate?: Partial<import("./recruitment").CandidateRecord>;
+}
+
+/**
+ * Every starter invited through the admin gets a recruitment record, which
+ * puts them through the welcome video → offer letter → onboarding tasks flow.
+ */
+async function createCandidateRecordFor(userId: string, input: InviteInput) {
+  try {
+    const { updateCandidateRecord } = await import("./recruitment-data");
+    await updateCandidateRecord(userId, {
+      jobTitle: input.roleTag,
+      ...(input.candidate ?? {}),
+    });
+  } catch {
+    /* best-effort — admins can add details later from the starter page */
+  }
 }
 
 export async function inviteStarter(
   invitedBy: string,
   input: InviteInput,
-): Promise<{ ok: boolean; message: string }> {
+): Promise<{ ok: boolean; message: string; userId?: string }> {
   if (!isSupabaseConfigured) {
     const state = demoState();
     if (state.starters.some((s) => s.email === input.email)) {
       return { ok: false, message: `${input.email} has already been invited.` };
     }
+    const id = `s-${Date.now()}`;
     state.starters.unshift({
-      id: `s-${Date.now()}`,
+      id,
       fullName: input.fullName,
       email: input.email,
       roleTag: input.roleTag,
@@ -1157,7 +1199,8 @@ export async function inviteStarter(
       lastActivityAt: null,
       invitedBy,
     });
-    return { ok: true, message: `Invitation sent to ${input.email}.` };
+    await createCandidateRecordFor(id, input);
+    return { ok: true, message: `Invitation sent to ${input.email}.`, userId: id };
   }
 
   // Real invite: create the auth user + profile, then email the link via Resend.
@@ -1190,8 +1233,9 @@ export async function inviteStarter(
       href: "/journey",
       read: false,
     });
+    await createCandidateRecordFor(invite.userId, input);
   }
-  return { ok: invite.ok, message: invite.message };
+  return { ok: invite.ok, message: invite.message, userId: invite.userId ?? undefined };
 }
 
 /** Build the common token map for integration events about a starter. */
@@ -1422,6 +1466,28 @@ function mapManagerRow(r: any): Manager {
     order: r.order ?? 0,
   };
 }
+function mapVideoRow(r: any): StaffVideo {
+  return {
+    id: r.id,
+    title: r.title,
+    speaker: r.speaker ?? "",
+    category: r.category ?? "Staff",
+    description: r.description ?? "",
+    videoUrl: r.video_url ?? "",
+    posterUrl: r.poster_url ?? "",
+    order: r.order ?? 0,
+  };
+}
+function mapTestimonialRow(r: any): Testimonial {
+  return {
+    id: r.id,
+    name: r.name,
+    role: r.role ?? "",
+    quote: r.quote ?? "",
+    photoUrl: r.photo_url ?? "",
+    order: r.order ?? 0,
+  };
+}
 function mapValueRow(r: any): CompanyValue {
   return {
     id: r.id,
@@ -1438,6 +1504,26 @@ function collectionToRow(
   item: Record<string, any>,
 ): Record<string, unknown> {
   switch (name) {
+    case "videos":
+      return {
+        id: item.id,
+        title: item.title,
+        speaker: item.speaker,
+        category: item.category,
+        description: item.description,
+        video_url: item.videoUrl ?? "",
+        poster_url: item.posterUrl ?? "",
+        order: item.order ?? 0,
+      };
+    case "testimonials":
+      return {
+        id: item.id,
+        name: item.name,
+        role: item.role,
+        quote: item.quote,
+        photo_url: item.photoUrl ?? "",
+        order: item.order ?? 0,
+      };
     case "directors":
       return {
         id: item.id,

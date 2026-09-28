@@ -101,12 +101,17 @@ export async function inviteStarterAction(
   const roleTag = String(formData.get("roleTag") ?? "New Starter");
   const department = String(formData.get("department") ?? "").trim() || null;
   const managerId = String(formData.get("managerId") ?? "").trim() || null;
+  const field = (k: string) => String(formData.get(k) ?? "").trim();
+  const niNumber = field("niNumber").replace(/\s+/g, "").toUpperCase();
 
   if (!fullName || !email) {
     return { ok: false, message: "Name and email are required." };
   }
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return { ok: false, message: "Please enter a valid email address." };
+  }
+  if (niNumber && !/^[A-CEGHJ-PR-TW-Z]{2}\d{6}[A-D]$/.test(niNumber)) {
+    return { ok: false, message: "That National Insurance number doesn't look right (e.g. QQ123456C)." };
   }
 
   const res = await inviteStarter(admin.id, {
@@ -115,6 +120,15 @@ export async function inviteStarterAction(
     roleTag,
     department,
     managerId,
+    candidate: {
+      address: field("address"),
+      dateOfBirth: field("dateOfBirth"),
+      niNumber,
+      jobTitle: roleTag,
+      salary: field("salary"),
+      contractHours: field("contractHours"),
+      startDate: field("startDate"),
+    },
   });
   if (res.ok) {
     const { dispatchEvent } = await import("@/lib/integrations");

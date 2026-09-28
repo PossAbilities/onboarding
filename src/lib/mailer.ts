@@ -17,6 +17,7 @@ export async function sendEmail(input: {
   to: string;
   subject: string;
   html: string;
+  attachments?: { filename: string; path: string }[];
 }): Promise<{ ok: boolean; id?: string; error?: string }> {
   if (!isEmailConfigured) {
     return { ok: false, error: "Resend is not configured (set RESEND_API_KEY)." };
@@ -33,6 +34,7 @@ export async function sendEmail(input: {
         to: [input.to],
         subject: input.subject,
         html: input.html,
+        ...(input.attachments?.length ? { attachments: input.attachments } : {}),
       }),
     });
     if (!res.ok) {
@@ -180,6 +182,32 @@ export async function sendStalledReminders(): Promise<{
       skipped ? `, skipped ${skipped} complete` : ""
     }.`,
   };
+}
+
+/**
+ * Reference request / reminder to a referee. `attachmentUrl` (the admin's
+ * reference form PDF, if set) is attached by Resend from its public URL.
+ */
+export async function sendReferenceTemplate(
+  kind: "request" | "reminder",
+  to: string,
+  data: Record<string, string>,
+  attachmentUrl: string | null,
+) {
+  if (!isEmailConfigured) {
+    return { ok: false, error: "Resend is not configured (set RESEND_API_KEY)." };
+  }
+  const template = await pickTemplate(kind === "request" ? "reference_request" : "reference_reminder");
+  if (!template) return { ok: false, error: "No reference email template." };
+  const merged = { company: "PossAbilities", ...data };
+  const filename =
+    attachmentUrl?.split("?")[0].split("/").pop()?.replace(/^\d+-/, "") || "reference-form.pdf";
+  return sendEmail({
+    to,
+    subject: renderTemplate(template.subject, merged),
+    html: renderTemplate(template.html, merged),
+    attachments: attachmentUrl ? [{ filename, path: attachmentUrl }] : undefined,
+  });
 }
 
 /** Prefer the admin-managed template for a trigger; fall back to the seed default. */

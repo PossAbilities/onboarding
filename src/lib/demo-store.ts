@@ -3,6 +3,7 @@ import {
   BENEFITS,
   DEMO_ADMIN,
   DEMO_STARTERS,
+  DEMO_USER,
   DIRECTORS,
   EMAIL_TEMPLATES,
   IDEAS,
@@ -15,8 +16,17 @@ import {
   PETS,
   ROLE_TAGS,
   SIGN_DOCUMENTS,
+  TESTIMONIALS,
   VALUES,
+  VIDEOS,
+  DEMO_CANDIDATE_RECORDS,
+  DEMO_REFERENCES,
 } from "./seed";
+import type {
+  CandidateRecord,
+  CandidateReference,
+  RecruitmentSettings,
+} from "./recruitment";
 import type {
   ApiKey,
   AppNotification,
@@ -39,6 +49,8 @@ import type {
   Pet,
   Profile,
   SignDocument,
+  StaffVideo,
+  Testimonial,
   UserBadge,
 } from "./types";
 
@@ -85,6 +97,12 @@ interface DemoState {
   departments: string[];
   notifications: AppNotification[]; // the demo employee's notifications
   credentials: Credential[]; // the demo employee's saved logins (plain in demo)
+  videos: StaffVideo[];
+  testimonials: Testimonial[];
+  // Recruitment / pre-employment onboarding, keyed by user id.
+  candidateRecords: Record<string, CandidateRecord>;
+  references: CandidateReference[];
+  recruitmentSettings: RecruitmentSettings | null; // null → defaults
 }
 
 function seedState(): DemoState {
@@ -115,7 +133,8 @@ function seedState(): DemoState {
     ],
     ideas: [...IDEAS],
     invites: [],
-    starters: [...DEMO_STARTERS],
+    // The demo employee is listed too, so admins can follow their recruitment record.
+    starters: [{ ...DEMO_USER }, ...DEMO_STARTERS],
     admins: [{ ...DEMO_ADMIN }],
     easterEggs: [],
     journeyPoints: 850,
@@ -167,6 +186,13 @@ function seedState(): DemoState {
       },
     ],
     credentials: [],
+    videos: VIDEOS.map((v) => ({ ...v })),
+    testimonials: TESTIMONIALS.map((t) => ({ ...t })),
+    candidateRecords: Object.fromEntries(
+      DEMO_CANDIDATE_RECORDS.map((r) => [r.userId, structuredClone(r)]),
+    ),
+    references: DEMO_REFERENCES.map((r) => structuredClone(r)),
+    recruitmentSettings: null,
   };
 }
 

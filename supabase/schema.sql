@@ -378,3 +378,88 @@ begin
     execute format('create policy "%s_write" on public.%I for all using (public.is_admin()) with check (public.is_admin())', t, t);
   end loop;
 end $$;
+
+-- ── Digital recruitment (see migrations/0012_digital_recruitment.sql) ───────
+create table if not exists public.candidate_records (
+  user_id uuid primary key references public.profiles (id) on delete cascade,
+  record jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.candidate_references (
+  id text primary key,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  kind text not null,                       -- employer | care_education | personal
+  referee_name text,
+  referee_email text,
+  referee_phone text,
+  organisation text,
+  referee_position text,
+  candidate_role text,
+  relationship text,
+  start_month text,
+  end_month text,
+  status text not null default 'draft',     -- draft | requested | received
+  token text not null unique,               -- secret for the referee's online form
+  requested_at timestamptz,
+  last_sent_at timestamptz,
+  reminder_count integer not null default 0,
+  received_at timestamptz,
+  response jsonb,
+  last_error text,
+  created_at timestamptz not null default now()
+);
+create index if not exists candidate_references_user_idx on public.candidate_references (user_id);
+create index if not exists candidate_references_status_idx on public.candidate_references (status);
+
+grant select on public.candidate_records to authenticated;
+grant select on public.candidate_references to authenticated;
+grant select, insert, update, delete on public.candidate_records to service_role;
+grant select, insert, update, delete on public.candidate_references to service_role;
+
+alter table public.candidate_records enable row level security;
+drop policy if exists "candidate_records_read" on public.candidate_records;
+create policy "candidate_records_read" on public.candidate_records for select
+  using (auth.uid() = user_id or public.is_admin());
+
+alter table public.candidate_references enable row level security;
+drop policy if exists "candidate_references_read" on public.candidate_references;
+create policy "candidate_references_read" on public.candidate_references for select
+  using (auth.uid() = user_id or public.is_admin());
+
+-- ── Videos from staff & service users, and testimonials ────────────────────
+create table if not exists public.staff_videos (
+  id text primary key,
+  title text not null,
+  speaker text,
+  category text,
+  description text,
+  video_url text,
+  poster_url text,
+  "order" integer default 0
+);
+
+create table if not exists public.testimonials (
+  id text primary key,
+  name text not null,
+  role text,
+  quote text,
+  photo_url text,
+  "order" integer default 0
+);
+
+grant select, insert, update, delete on public.staff_videos to authenticated, service_role;
+grant select, insert, update, delete on public.testimonials to authenticated, service_role;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['staff_videos','testimonials']
+  loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists "%s_read" on public.%I', t, t);
+    execute format('create policy "%s_read" on public.%I for select using (auth.role() = ''authenticated'')', t, t);
+    execute format('drop policy if exists "%s_write" on public.%I', t, t);
+    execute format('create policy "%s_write" on public.%I for all using (public.is_admin()) with check (public.is_admin())', t, t);
+  end loop;
+end $$;

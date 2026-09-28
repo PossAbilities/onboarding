@@ -18,7 +18,7 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
       {items.map((item) => {
         // Section-root links (/journey, /admin) match exactly; others also
         // match their nested routes.
-        const isRoot = item.href === "/journey" || item.href === "/admin";
+        const isRoot = ["/journey", "/admin", "/home"].includes(item.href);
         const active = isRoot
           ? pathname === item.href
           : pathname === item.href || pathname.startsWith(item.href + "/");

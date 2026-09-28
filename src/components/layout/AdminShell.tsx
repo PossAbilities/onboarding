@@ -11,6 +11,7 @@ import type { Profile } from "@/lib/types";
 const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Overview", icon: "dashboard" },
   { href: "/admin/starters", label: "Manage Starters", icon: "group_add" },
+  { href: "/admin/recruitment", label: "Recruitment Setup", icon: "how_to_reg" },
   { href: "/admin/managers", label: "Managers", icon: "supervisor_account" },
   { href: "/admin/content", label: "Journey Content", icon: "edit_document" },
   { href: "/admin/library", label: "Content Library", icon: "perm_media" },
@@ -62,7 +63,7 @@ export function AdminShell({
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-outline-variant/50 bg-surface-container-lowest px-4 py-3 md:px-8">
           <Link href="/admin" className="lg:hidden">
-            <Logo size="text-lg" />
+            <Logo size="text-lg" href={null} />
           </Link>
           <div className="ml-auto flex items-center gap-3">
             <span className="hidden items-center gap-1.5 rounded-full bg-success-green/15 px-3 py-1.5 text-xs font-bold text-[#1b7a44] sm:inline-flex">

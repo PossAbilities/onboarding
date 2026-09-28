@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { sendStalledReminders } from "@/lib/mailer";
 import { purgeExpiredCredentials } from "@/lib/data";
+import { sendReferenceReminders } from "@/lib/recruitment-data";
 
 // This endpoint is invoked by the daily Netlify scheduled function. It is
 // protected by CRON_SECRET — without a matching secret it refuses to run.
@@ -27,7 +28,18 @@ async function run(request: NextRequest) {
   } catch {
     /* best-effort */
   }
-  return NextResponse.json({ ...result, purgedCredentials }, { status: 200 });
+  // Chase referees who haven't returned a reference (every N days, see
+  // Admin → Recruitment Setup).
+  let referenceReminders: { sent: number; errors: string[] } = { sent: 0, errors: [] };
+  try {
+    referenceReminders = await sendReferenceReminders();
+  } catch (e) {
+    referenceReminders.errors.push(e instanceof Error ? e.message : "failed");
+  }
+  return NextResponse.json(
+    { ...result, purgedCredentials, referenceReminders },
+    { status: 200 },
+  );
 }
 
 export async function GET(request: NextRequest) {

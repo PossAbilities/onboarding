@@ -27,6 +27,8 @@ const TRIGGER_TONE: Record<EmailTrigger, "teal" | "pink" | "success" | "purple">
   welcome: "teal",
   reminder: "pink",
   completion: "success",
+  reference_request: "teal",
+  reference_reminder: "pink",
   custom: "purple",
 };
 
