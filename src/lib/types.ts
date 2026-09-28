@@ -254,7 +254,13 @@ export interface AppNotification {
   createdAt: string;
 }
 
-export type EmailTrigger = "welcome" | "reminder" | "completion" | "custom";
+export type EmailTrigger =
+  | "welcome"
+  | "reminder"
+  | "completion"
+  | "reference_request"
+  | "reference_reminder"
+  | "custom";
 
 export interface EmailTemplate {
   id: string;
@@ -275,7 +281,31 @@ export interface CompanyValue {
   order: number;
 }
 
+/** A video from staff or the people we support (Videos page). */
+export interface StaffVideo {
+  id: string;
+  title: string;
+  speaker: string;
+  category: string; // e.g. "Staff" or "People we support"
+  description: string;
+  videoUrl: string;
+  posterUrl: string;
+  order: number;
+}
+
+/** A testimonial quote (Testimonials page). */
+export interface Testimonial {
+  id: string;
+  name: string;
+  role: string;
+  quote: string;
+  photoUrl: string;
+  order: number;
+}
+
 export type CollectionName =
+  | "videos"
+  | "testimonials"
   | "directors"
   | "benefits"
   | "pets"

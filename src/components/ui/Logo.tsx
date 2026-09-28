@@ -7,7 +7,7 @@ import { clsx } from "@/lib/cn";
  */
 export function Logo({
   className,
-  href = "/journey",
+  href = "/home",
   size = "text-xl",
   onDark = false,
 }: {

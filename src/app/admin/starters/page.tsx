@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { getAllCandidateRecords, getAllReferences } from "@/lib/recruitment-data";
+import { computeChecklist } from "@/lib/recruitment";
 import {
   getDepartments,
   getManagers,
@@ -15,12 +18,18 @@ import { EditStarter } from "./EditStarter";
 export const metadata: Metadata = { title: "Admin · Manage Starters" };
 
 export default async function ManageStartersPage() {
-  const [starters, managers, roles, departments] = await Promise.all([
+  const [starters, managers, roles, departments, records, references] = await Promise.all([
     getStarters(),
     getManagers(),
     getRoles(),
     getDepartments(),
+    getAllCandidateRecords(),
+    getAllReferences(),
   ]);
+  const onboarding = (id: string) => {
+    const rec = records[id];
+    return rec ? computeChecklist(rec, references.filter((r) => r.userId === id)) : null;
+  };
   const managerOptions = managers.map((m) => ({
     id: m.id,
     name: m.name,
@@ -55,13 +64,14 @@ export default async function ManageStartersPage() {
           </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="bg-surface-container-low text-xs font-bold uppercase tracking-wide text-on-surface-variant">
               <tr>
                 <th className="px-5 py-3">Employee</th>
                 <th className="px-5 py-3">Role &amp; dept</th>
                 <th className="px-5 py-3">Manager</th>
-                <th className="px-5 py-3">Progress</th>
+                <th className="px-5 py-3">Onboarding</th>
+                <th className="px-5 py-3">Induction</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3 text-right">Edit</th>
               </tr>
@@ -73,9 +83,12 @@ export default async function ManageStartersPage() {
                     <div className="flex items-center gap-3">
                       <Avatar src={s.avatarUrl} name={s.fullName} size={36} />
                       <div className="min-w-0">
-                        <p className="truncate font-bold text-on-surface">
+                        <Link
+                          href={`/admin/starters/${s.id}`}
+                          className="block truncate font-bold text-on-surface hover:text-secondary hover:underline"
+                        >
                           {s.fullName}
-                        </p>
+                        </Link>
                         <p className="truncate text-xs text-on-surface-variant">
                           {s.email}
                         </p>
@@ -99,6 +112,25 @@ export default async function ManageStartersPage() {
                       />
                       {managerName(s.managerId)}
                     </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    {(() => {
+                      const c = onboarding(s.id);
+                      return (
+                        <Link href={`/admin/starters/${s.id}`} className="block w-32">
+                          {c ? (
+                            <>
+                              <ProgressBar value={c.percent} />
+                              <span className="mt-1 block text-xs font-bold text-on-surface-variant">
+                                {c.done}/{c.total} checks · View
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-xs font-bold text-secondary">View record</span>
+                          )}
+                        </Link>
+                      );
+                    })()}
                   </td>
                   <td className="px-5 py-3">
                     <ProgressBar

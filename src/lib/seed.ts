@@ -12,7 +12,14 @@ import type {
   Pet,
   Profile,
   SignDocument,
+  StaffVideo,
+  Testimonial,
 } from "./types";
+import {
+  emptyRecord,
+  type CandidateRecord,
+  type CandidateReference,
+} from "./recruitment";
 
 /**
  * Seed / demo content. This populates every page out-of-the-box so the site is
@@ -115,6 +122,123 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
        <p style="margin:24px 0;">${button("View my certificate")}</p>
        <p style="font-size:14px;color:#80737f;">Welcome to the team, properly. 💜</p>`,
     ),
+  },
+];
+
+const refButton = (label: string) =>
+  `<a href="{{reference_link}}" style="display:inline-block;background:#ec008c;color:#ffffff;font-weight:bold;text-decoration:none;padding:14px 28px;border-radius:12px;">${label}</a>`;
+
+EMAIL_TEMPLATES.push(
+  {
+    id: "email-reference-request",
+    name: "Reference request (to referee)",
+    trigger: "reference_request",
+    subject: "Reference request for {{candidate_name}}",
+    enabled: true,
+    updatedAt: null,
+    html: emailShell(
+      `<h1 style="margin:0 0 12px;font-size:24px;color:#290036;">Reference request</h1>
+       <p style="font-size:16px;line-height:24px;color:#4e434e;">
+         Dear {{referee_name}},
+       </p>
+       <p style="font-size:16px;line-height:24px;color:#4e434e;">
+         <strong>{{candidate_name}}</strong> has applied to work with {{company}} and has
+         given your name as a referee ({{reference_type}}), with their permission for us to contact you.
+       </p>
+       <p style="font-size:16px;line-height:24px;color:#4e434e;">
+         We'd be very grateful if you could complete a short reference using the secure
+         online form below. It only takes a few minutes. If a reference form is attached,
+         you're welcome to complete and return that instead.
+       </p>
+       <p style="margin:24px 0;">${refButton("Complete the reference")}</p>
+       <p style="font-size:14px;color:#80737f;">Thank you for your help. Please reply to this email if you have any questions.</p>`,
+    ),
+  },
+  {
+    id: "email-reference-reminder",
+    name: "Reference reminder (to referee)",
+    trigger: "reference_reminder",
+    subject: "Reminder: reference for {{candidate_name}}",
+    enabled: true,
+    updatedAt: null,
+    html: emailShell(
+      `<h1 style="margin:0 0 12px;font-size:24px;color:#290036;">A quick reminder</h1>
+       <p style="font-size:16px;line-height:24px;color:#4e434e;">
+         Dear {{referee_name}}, we recently asked for a reference for
+         <strong>{{candidate_name}}</strong> and haven't received it yet.
+       </p>
+       <p style="font-size:16px;line-height:24px;color:#4e434e;">
+         Their start with {{company}} depends on references being returned, so we'd
+         really appreciate it if you could complete the short form below.
+       </p>
+       <p style="margin:24px 0;">${refButton("Complete the reference")}</p>
+       <p style="font-size:14px;color:#80737f;">If you've already sent it, thank you — please ignore this email.</p>`,
+    ),
+  },
+);
+
+/** Videos from staff & the people we support — edit in Admin → Content Library. */
+export const VIDEOS: StaffVideo[] = [
+  {
+    id: "vid-support-worker",
+    title: "A day in the life of a Support Worker",
+    speaker: "Jess, Support Worker",
+    category: "Staff",
+    description: "Jess shares what a typical shift looks like and what she loves about the role.",
+    videoUrl: SAMPLE_VIDEO,
+    posterUrl: "",
+    order: 1,
+  },
+  {
+    id: "vid-team-leader",
+    title: "Why I stayed at PossAbilities",
+    speaker: "Marcus, Team Leader",
+    category: "Staff",
+    description: "Marcus started as a support worker and now leads his own team.",
+    videoUrl: SAMPLE_VIDEO_2,
+    posterUrl: "",
+    order: 2,
+  },
+  {
+    id: "vid-service-user",
+    title: "Living the life I choose",
+    speaker: "Tom, supported by PossAbilities",
+    category: "People we support",
+    description: "Tom talks about his home, his hobbies and the team who support him.",
+    videoUrl: SAMPLE_VIDEO,
+    posterUrl: "",
+    order: 3,
+  },
+];
+
+/** Testimonials — edit in Admin → Content Library. */
+export const TESTIMONIALS: Testimonial[] = [
+  {
+    id: "tst-1",
+    name: "Sophie",
+    role: "Support Worker, Supported Living",
+    quote:
+      "From my very first day I felt part of a family. The training was brilliant and there's always someone to ask.",
+    photoUrl: avatar(45),
+    order: 1,
+  },
+  {
+    id: "tst-2",
+    name: "Daniel",
+    role: "Day Services Coordinator",
+    quote:
+      "No two days are the same. Seeing the people we support achieve their goals is the best feeling in the world.",
+    photoUrl: avatar(52),
+    order: 2,
+  },
+  {
+    id: "tst-3",
+    name: "Margaret",
+    role: "Parent of someone we support",
+    quote:
+      "The team treat my son with such kindness and respect. He's more confident and independent than ever.",
+    photoUrl: avatar(47),
+    order: 3,
   },
 ];
 
@@ -1011,4 +1135,91 @@ export const DEPARTMENTS = [
   "People & Culture",
   "Enterprise",
   "Facilities",
+];
+
+/* ─────────────── Demo recruitment records (demo mode only) ───────────────
+ * The demo employee starts right at the beginning of the recruitment flow
+ * (welcome video → offer letter), so the whole process can be clicked through.
+ */
+export const DEMO_CANDIDATE_RECORDS: CandidateRecord[] = [
+  {
+    ...emptyRecord("demo-user"),
+    address: "12 Example Street\nRochdale\nOL16 1AA",
+    dateOfBirth: "1995-04-12",
+    niNumber: "QQ123456C",
+    jobTitle: "Support Worker",
+    salary: "£24,500 per annum",
+    contractHours: "37.5 hours per week",
+    startDate: "2026-11-02",
+  },
+  {
+    ...emptyRecord("s-sarah"),
+    address: "4 Park Lane\nBury\nBL9 0AA",
+    dateOfBirth: "1990-09-01",
+    niNumber: "QQ654321A",
+    jobTitle: "Support Worker",
+    salary: "£24,500 per annum",
+    contractHours: "30 hours per week",
+    startDate: "2026-10-19",
+    welcomeWatchedAt: "2026-09-20T09:00:00Z",
+    offerSignature: { signedName: "Sarah Miller", signatureData: null, signedAt: "2026-09-20T09:05:00Z" },
+    referencePermission: { signedName: "Sarah Miller", signatureData: null, signedAt: "2026-09-20T09:10:00Z" },
+    referencesSubmittedAt: "2026-09-20T09:20:00Z",
+    dbsSubmittedAt: "2026-09-21T10:00:00Z",
+    rtwRoute: "british",
+    rtwSubmittedAt: "2026-09-21T10:05:00Z",
+    drivesForBusiness: false,
+    checks: {
+      health_questionnaire: { done: true, at: "2026-09-23T12:00:00Z", by: "Occupational Health" },
+    },
+  },
+];
+
+export const DEMO_REFERENCES: CandidateReference[] = [
+  {
+    id: "ref-demo-1",
+    userId: "s-sarah",
+    kind: "employer",
+    refereeName: "Karen Holt",
+    refereeEmail: "k.holt@example.com",
+    refereePhone: "",
+    organisation: "Bright Futures Care",
+    refereePosition: "Registered Manager",
+    candidateRole: "Care Assistant",
+    relationship: "",
+    startMonth: "2021-03",
+    endMonth: "2026-08",
+    status: "received",
+    token: "demo-token-received",
+    requestedAt: "2026-09-20T09:20:00Z",
+    lastSentAt: "2026-09-20T09:20:00Z",
+    reminderCount: 0,
+    receivedAt: "2026-09-22T14:00:00Z",
+    response: { recommend: "Yes", conduct: "Excellent — reliable and caring." },
+    lastError: null,
+    createdAt: "2026-09-20T09:20:00Z",
+  },
+  {
+    id: "ref-demo-2",
+    userId: "s-sarah",
+    kind: "personal",
+    refereeName: "Tom Reid",
+    refereeEmail: "tom.reid@example.com",
+    refereePhone: "",
+    organisation: "",
+    refereePosition: "",
+    candidateRole: "",
+    relationship: "Neighbour, known 8 years",
+    startMonth: "",
+    endMonth: "",
+    status: "requested",
+    token: "demo-token-requested",
+    requestedAt: "2026-09-20T09:20:00Z",
+    lastSentAt: "2026-09-23T09:00:00Z",
+    reminderCount: 1,
+    receivedAt: null,
+    response: null,
+    lastError: null,
+    createdAt: "2026-09-20T09:20:00Z",
+  },
 ];

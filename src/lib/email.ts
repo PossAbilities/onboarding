@@ -21,6 +21,11 @@ export const MERGE_TAGS: MergeTag[] = [
   { tag: "{{due_date}}", key: "due_date", label: "Due date", sample: "30 June 2026" },
   { tag: "{{login_url}}", key: "login_url", label: "Login link", sample: "https://possabilities-induction.netlify.app/login" },
   { tag: "{{company}}", key: "company", label: "Company", sample: "PossAbilities" },
+  // Reference emails (sent to referees)
+  { tag: "{{referee_name}}", key: "referee_name", label: "Referee name", sample: "Karen Holt" },
+  { tag: "{{candidate_name}}", key: "candidate_name", label: "Candidate name", sample: "Alex Guru" },
+  { tag: "{{reference_type}}", key: "reference_type", label: "Reference type", sample: "most recent employer" },
+  { tag: "{{reference_link}}", key: "reference_link", label: "Reference form link", sample: "https://possabilities-induction.netlify.app/reference/sample" },
 ];
 
 /** Sample data used to render previews. */
@@ -42,5 +47,7 @@ export const EMAIL_TRIGGERS = [
   { value: "welcome", label: "Welcome (on invite/first login)" },
   { value: "reminder", label: "Reminder (stalled progress)" },
   { value: "completion", label: "Completion (certificate earned)" },
+  { value: "reference_request", label: "Reference request (to referee)" },
+  { value: "reference_reminder", label: "Reference reminder (every few days)" },
   { value: "custom", label: "Custom / manual send" },
 ] as const;

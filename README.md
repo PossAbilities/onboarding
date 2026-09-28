@@ -106,6 +106,45 @@ the built-in HTML5 player (no third-party embeds).
    - Trigger it any time from **Admin → Email Templates → "Send reminders now"**.
    - The reminder job needs both Supabase (to find starters) and Resend (to send).
 
+## 🧑‍💼 Digital recruitment process
+
+New candidates go through HR's digital recruitment process before the induction journey:
+
+1. **Set up the candidate** — Admin → Manage Starters → *Set up a candidate*: name, email,
+   address, date of birth, NI number, plus salary, contractual hours and start date for the
+   offer letter. They're emailed their log in details.
+2. **First log in** — a *"Congratulations on being offered a role at PossAbilities"* pop-up,
+   then Rachel's welcome video. The next step unlocks once the video has been watched.
+3. **Conditional offer letter** — shown with confetti, filled in with their salary & hours,
+   and signed electronically.
+4. **Home page** — a progress banner at the top, and the left-hand menu: **Onboarding**,
+   **PossAbilities Benefits**, **Staff & Service User Videos**, **Testimonials** (the
+   gamified induction journey sits underneath).
+5. **Onboarding tasks** — each task with HR's explanation: permission to request references
+   (e-sign), reference details (most recent employer + personal reference required; a new
+   box appears for each health & social care / education employer), DBS (accepted ID list,
+   Ucheck), health questionnaire, employment history (automatic gap detection, reasons for
+   leaving care/education roles), right to work (pick nationality → exact documents, share
+   code) and optional driving for business (vehicle checklist, insurance, case-sensitive DVLA
+   check code).
+6. **Checklist** — auto-ticks where it can (signatures, references provided/returned); HR
+   ticks the rest on **Admin → Manage Starters → (candidate)**. DBS & health items can also be
+   ticked by Ucheck / Occupational Health via `POST /api/inbound/checklist` (API key from
+   Integrations).
+7. **References** — requests are emailed to referees automatically (Resend) with a secure
+   online reference form (`/reference/<token>`) and an optional attached PDF form. Outstanding
+   referees are reminded every 3 days by the daily cron. When a reference comes back the
+   checklist and progress bar update.
+
+Everything is configurable in **Admin → Recruitment Setup** (welcome video & message, offer
+letter wording with merge tags, permission text, DBS ID list, right-to-work lists, vehicle
+checklist, reference attachment, reminder frequency). Email wording is in **Email Templates**,
+and videos/testimonials in **Content Library**.
+
+**Existing Supabase projects:** run `supabase/migrations/0012_digital_recruitment.sql`.
+Candidate data (DOB, NI number, etc.) is readable only by the candidate and admins, and is
+written only through the app's server actions.
+
 ## 🌐 Deploy to Netlify
 
 This repo includes `netlify.toml` with the official Next.js runtime.

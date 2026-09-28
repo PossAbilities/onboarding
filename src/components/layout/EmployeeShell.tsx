@@ -7,10 +7,27 @@ import { ButtonLink } from "@/components/ui/Button";
 import { SidebarNav, type NavItem } from "./SidebarNav";
 import { UserMenu } from "./UserMenu";
 import { NotificationBell } from "./NotificationBell";
+import { OnboardingBanner } from "@/components/recruitment/OnboardingBanner";
 import { getJourneyState, getMyNotifications } from "@/lib/data";
+import { getCandidateRecord, getReferences } from "@/lib/recruitment-data";
+import { computeChecklist } from "@/lib/recruitment";
 import { statusFor } from "@/lib/journey";
 import type { Profile } from "@/lib/types";
 
+/** Pre-employment onboarding — the main options for new candidates. */
+const ONBOARDING_NAV: NavItem[] = [
+  { href: "/home", label: "Home", icon: "home" },
+  { href: "/onboarding", label: "Onboarding", icon: "checklist" },
+  { href: "/benefits", label: "PossAbilities Benefits", icon: "redeem" },
+  {
+    href: "/videos",
+    label: "Staff & Service User Videos",
+    icon: "smart_display",
+  },
+  { href: "/testimonials", label: "Testimonials", icon: "format_quote" },
+];
+
+/** The gamified induction journey. */
 const NAV: NavItem[] = [
   { href: "/journey", label: "My Journey", icon: "map" },
   { href: "/milestones", label: "Milestones", icon: "flag" },
@@ -28,10 +45,13 @@ export async function EmployeeShell({
   profile: Profile;
   children: ReactNode;
 }) {
-  const [journey, notifications] = await Promise.all([
+  const [journey, notifications, record, references] = await Promise.all([
     getJourneyState(profile),
     getMyNotifications(profile.id),
+    getCandidateRecord(profile.id),
+    getReferences(profile.id),
   ]);
+  const checklist = record ? computeChecklist(record, references) : null;
   const nextModule =
     journey.modules.find(
       (m) => statusFor(m.id, journey.progress) === "in_progress",
@@ -41,7 +61,10 @@ export async function EmployeeShell({
     );
 
   const nav = profile.isAdmin
-    ? [...NAV, { href: "/admin", label: "Admin Panel", icon: "admin_panel_settings" }]
+    ? [
+        ...NAV,
+        { href: "/admin", label: "Admin Panel", icon: "admin_panel_settings" },
+      ]
     : NAV;
 
   return (
@@ -52,15 +75,26 @@ export async function EmployeeShell({
 
         <div className="rounded-xl bg-surface-container-lowest p-4 journey-card-shadow">
           <p className="text-xs font-bold uppercase tracking-wide text-on-surface-variant">
-            Journey Progress
+            {checklist ? "Onboarding Progress" : "Journey Progress"}
           </p>
           <p className="mt-1 text-2xl font-black text-primary-container">
-            {journey.percentComplete}%
+            {checklist ? checklist.percent : journey.percentComplete}%
           </p>
-          <ProgressBar value={journey.percentComplete} className="mt-2" />
+          <ProgressBar
+            value={checklist ? checklist.percent : journey.percentComplete}
+            className="mt-2"
+          />
         </div>
 
-        <SidebarNav items={nav} />
+        <div className="-mr-2 flex min-h-0 flex-col gap-4 overflow-y-auto pr-2">
+          <SidebarNav items={ONBOARDING_NAV} />
+          <div>
+            <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-widest text-outline">
+              Induction Journey
+            </p>
+            <SidebarNav items={nav} />
+          </div>
+        </div>
 
         {nextModule && (
           <div className="mt-auto rounded-xl bg-primary-container p-4 text-on-primary">
@@ -82,38 +116,60 @@ export async function EmployeeShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-outline-variant/50 bg-background/90 px-4 py-3 backdrop-blur md:px-8">
-          <Link href="/journey" className="lg:hidden">
-            <Logo size="text-lg" />
-          </Link>
-          <nav className="ml-auto hidden items-center gap-1 md:flex">
-            <Link
-              href="/journey"
-              className="rounded-lg px-3 py-2 text-sm font-bold text-on-surface-variant hover:text-secondary"
-            >
-              Journey
+        {/* Top bar (+ onboarding progress banner), pinned to the top */}
+        <div className="sticky top-0 z-30">
+          <header className="flex items-center gap-4 border-b border-outline-variant/50 bg-background/90 px-4 py-3 backdrop-blur md:px-8">
+            <Link href="/home" className="lg:hidden">
+              <Logo size="text-lg" href={null} />
             </Link>
-            <Link
-              href="/leaderboard"
-              className="rounded-lg px-3 py-2 text-sm font-bold text-on-surface-variant hover:text-secondary"
-            >
-              Community
-            </Link>
-          </nav>
-          <div className="ml-auto flex items-center gap-3 md:ml-0">
-            <span className="hidden items-center gap-1 rounded-full bg-tertiary-fixed px-3 py-1.5 text-xs font-bold text-on-tertiary-fixed-variant sm:inline-flex">
-              <Icon name="bolt" size={16} fill /> {profile.journeyPoints} XP
-            </span>
-            <NotificationBell items={notifications} />
-            <UserMenu
-              name={profile.fullName}
-              roleTag={profile.roleTag}
-              avatarUrl={profile.avatarUrl}
-              isAdmin={profile.isAdmin}
+            <nav className="ml-auto hidden items-center gap-1 md:flex">
+              <Link
+                href="/home"
+                className="rounded-lg px-3 py-2 text-sm font-bold text-on-surface-variant hover:text-secondary"
+              >
+                Home
+              </Link>
+              <Link
+                href="/onboarding"
+                className="rounded-lg px-3 py-2 text-sm font-bold text-on-surface-variant hover:text-secondary"
+              >
+                Onboarding
+              </Link>
+              <Link
+                href="/journey"
+                className="rounded-lg px-3 py-2 text-sm font-bold text-on-surface-variant hover:text-secondary"
+              >
+                Journey
+              </Link>
+              <Link
+                href="/leaderboard"
+                className="rounded-lg px-3 py-2 text-sm font-bold text-on-surface-variant hover:text-secondary"
+              >
+                Community
+              </Link>
+            </nav>
+            <div className="ml-auto flex items-center gap-3 md:ml-0">
+              <span className="hidden items-center gap-1 rounded-full bg-tertiary-fixed px-3 py-1.5 text-xs font-bold text-on-tertiary-fixed-variant sm:inline-flex">
+                <Icon name="bolt" size={16} fill /> {profile.journeyPoints} XP
+              </span>
+              <NotificationBell items={notifications} />
+              <UserMenu
+                name={profile.fullName}
+                roleTag={profile.roleTag}
+                avatarUrl={profile.avatarUrl}
+                isAdmin={profile.isAdmin}
+              />
+            </div>
+          </header>
+
+          {checklist && (
+            <OnboardingBanner
+              done={checklist.done}
+              total={checklist.total}
+              percent={checklist.percent}
             />
-          </div>
-        </header>
+          )}
+        </div>
 
         {/* Mobile bottom nav */}
         <main className="flex-1 pb-24 lg:pb-0">{children}</main>
@@ -126,9 +182,9 @@ export async function EmployeeShell({
 
 function MobileTabBar({ isAdmin }: { isAdmin: boolean }) {
   const tabs = [
+    { href: "/home", label: "Home", icon: "home" },
+    { href: "/onboarding", label: "Onboarding", icon: "checklist" },
     { href: "/journey", label: "Journey", icon: "map" },
-    { href: "/badges", label: "Badges", icon: "workspace_premium" },
-    { href: "/leaderboard", label: "Social", icon: "groups" },
     isAdmin
       ? { href: "/admin", label: "Admin", icon: "admin_panel_settings" }
       : { href: "/knowledge-hub", label: "Hub", icon: "menu_book" },

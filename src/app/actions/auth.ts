@@ -17,7 +17,7 @@ const COOKIE_OPTS = {
 export async function demoLogin(role: "employee" | "admin") {
   const store = await cookies();
   store.set(DEMO_COOKIE, role, COOKIE_OPTS);
-  redirect(role === "admin" ? "/admin" : "/journey");
+  redirect(role === "admin" ? "/admin" : "/home");
 }
 
 export async function signOut() {
@@ -51,7 +51,7 @@ export async function signInWithPassword(
     .select("is_admin")
     .eq("email", email)
     .maybeSingle();
-  redirect(data?.is_admin ? "/admin" : "/journey");
+  redirect(data?.is_admin ? "/admin" : "/home");
 }
 
 /** New starter accepting an invite — sets their password & activates them. */
@@ -90,5 +90,5 @@ export async function acceptInvite(
       )
       .eq("id", user.id);
   }
-  redirect(isAdmin ? "/admin" : "/journey");
+  redirect(isAdmin ? "/admin" : "/home");
 }

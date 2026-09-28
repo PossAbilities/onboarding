@@ -43,6 +43,34 @@ interface Spec {
 }
 
 const SPECS: Record<CollectionName, Spec> = {
+  videos: {
+    singular: "Video",
+    titleKey: "title",
+    subtitleKey: "speaker",
+    imageKey: "posterUrl",
+    hasOrder: true,
+    fields: [
+      { key: "title", label: "Title", type: "text" },
+      { key: "speaker", label: "Who's speaking", type: "text", placeholder: "Jess, Support Worker" },
+      { key: "category", label: "Group (e.g. Staff / People we support)", type: "text" },
+      { key: "description", label: "Short description", type: "textarea" },
+      { key: "videoUrl", label: "Video", type: "video" },
+      { key: "posterUrl", label: "Thumbnail (optional)", type: "image", shape: "wide" },
+    ],
+  },
+  testimonials: {
+    singular: "Testimonial",
+    titleKey: "name",
+    subtitleKey: "role",
+    imageKey: "photoUrl",
+    hasOrder: true,
+    fields: [
+      { key: "name", label: "Name", type: "text" },
+      { key: "role", label: "Role / relationship", type: "text" },
+      { key: "quote", label: "Quote", type: "textarea" },
+      { key: "photoUrl", label: "Photo (optional)", type: "image", shape: "avatar" },
+    ],
+  },
   directors: {
     singular: "Director",
     titleKey: "name",

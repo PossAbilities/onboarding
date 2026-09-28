@@ -46,10 +46,12 @@ export function InviteStarterForm({
   return (
     <form action={action} className="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 journey-card-shadow">
       <h3 className="flex items-center gap-2 text-lg font-black text-on-surface">
-        <Icon name="person_add" className="text-secondary" fill /> Invite a starter
+        <Icon name="person_add" className="text-secondary" fill /> Set up a candidate
       </h3>
       <p className="mt-1 text-sm text-on-surface-variant">
-        They&rsquo;ll receive an email to set a password and begin their journey.
+        They&rsquo;ll receive their log in details by email. When they first sign
+        in they&rsquo;ll see Rachel&rsquo;s welcome video, then their conditional
+        offer letter to sign.
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm font-bold text-on-surface">
@@ -112,13 +114,75 @@ export function InviteStarterForm({
           </span>
         </label>
       </div>
+
+      <p className="mt-5 text-xs font-bold uppercase tracking-wide text-on-surface-variant">
+        Personal details
+      </p>
+      <div className="mt-2 grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-sm font-bold text-on-surface sm:col-span-2">
+          Address
+          <textarea
+            name="address"
+            rows={3}
+            placeholder={"12 Example Street\nRochdale\nOL16 1AA"}
+            className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-bold text-on-surface">
+          Date of birth
+          <input
+            name="dateOfBirth"
+            type="date"
+            className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-bold text-on-surface">
+          National Insurance number
+          <input
+            name="niNumber"
+            placeholder="QQ123456C"
+            autoComplete="off"
+            className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal uppercase"
+          />
+        </label>
+      </div>
+
+      <p className="mt-5 text-xs font-bold uppercase tracking-wide text-on-surface-variant">
+        Offer letter
+      </p>
+      <div className="mt-2 grid gap-3 sm:grid-cols-3">
+        <label className="flex flex-col gap-1 text-sm font-bold text-on-surface">
+          Salary
+          <input
+            name="salary"
+            placeholder="£24,500 per annum"
+            className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-bold text-on-surface">
+          Contractual hours
+          <input
+            name="contractHours"
+            placeholder="37.5 hours per week"
+            className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-bold text-on-surface">
+          Start date
+          <input
+            name="startDate"
+            type="date"
+            className="field-focus rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-normal"
+          />
+        </label>
+      </div>
       <Notice state={state} />
       <button
         type="submit"
         disabled={pending}
         className="btn-3d mt-4 inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-3 text-sm font-bold text-on-secondary"
       >
-        <Icon name="send" size={18} /> {pending ? "Sending…" : "Send invite"}
+        <Icon name="send" size={18} /> {pending ? "Sending…" : "Set up & send log in details"}
       </button>
     </form>
   );

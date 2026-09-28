@@ -16,6 +16,7 @@ const PUBLIC_PATHS = [
   "/auth",
   "/api/cron",
   "/api/inbound",
+  "/reference", // referees complete references without an account
 ];
 
 export async function proxy(request: NextRequest) {
@@ -59,7 +60,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
   if (isAuthed && pathname === "/login") {
-    return NextResponse.redirect(new URL("/journey", request.url));
+    return NextResponse.redirect(new URL("/home", request.url));
   }
 
   return response;
