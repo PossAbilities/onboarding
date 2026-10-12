@@ -1,0 +1,39 @@
+name: Strix Security Check
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  strix-security:
+    name: Strix Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Strix
+        run: pipx install strix-agent
+
+      - name: Run Strix
+        env:
+          STRIX_LLM: ${{ secrets.STRIX_LLM }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            strix -n -t ./ --scan-mode quick --scope-mode diff --diff-base origin/${{ github.base_ref }} || true
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            strix -n -t ./ --scan-mode quick --scope-mode diff --diff-base ${{ github.event.before }} || true
+          else
+            strix -n -t ./ --scan-mode quick || true
+          fi
