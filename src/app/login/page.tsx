@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Logo } from "@/components/ui/Logo";
 import { Icon } from "@/components/ui/Icon";
+import { ContactEmail } from "@/components/ui/ContactEmail";
 import { isSupabaseConfigured } from "@/lib/config";
 import { LoginForm } from "./LoginForm";
 import { DemoLogin } from "./DemoLogin";
@@ -82,12 +83,7 @@ export default function LoginPage() {
 
           <p className="mt-8 text-center text-sm text-on-surface-variant">
             Need access? Ask your manager to send an invite, or email{" "}
-            <a
-              href="mailto:digital@possabilities.org.uk"
-              className="font-bold text-secondary"
-            >
-              digital@possabilities.org.uk
-            </a>
+            <ContactEmail className="font-bold text-secondary" />
           </p>
         </div>
       </div>
