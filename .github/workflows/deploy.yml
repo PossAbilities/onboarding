@@ -1,0 +1,57 @@
+name: Deploy onboarding to Ryan's Cloud (VPS)
+
+# Push-to-deploy: on every push to main, package the repo, ship it to the Hetzner
+# VPS, and run the existing build script there (which extracts the tarball to
+# /opt/onboarding, writes the self-hosted .env, builds ryan-cloud-onboarding:latest
+# and restarts the ryan-onboarding container behind the shared mhfa-caddy proxy).
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#   VPS_SSH_KEY  - the deploy private key, base64-encoded (base64 -w0 key).
+#                  MUST be base64: a raw key loses its trailing newline and fails
+#                  with "error in libcrypto". The job decodes it with `base64 -d`.
+#   VPS_HOST     - 178.104.251.61
+#   VPS_USER     - root
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-onboarding-vps
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Package frontend (no VCS / build artifacts / secrets)
+        run: >
+          tar czf onboarding-frontend.tar.gz
+          --exclude=./.git
+          --exclude=./node_modules
+          --exclude=./.next
+          --exclude=./.env
+          .
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" | base64 -d > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Upload tarball to the VPS
+        run: >
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new
+          onboarding-frontend.tar.gz
+          "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/root/onboarding-frontend.tar.gz"
+
+      - name: Build and restart on the VPS
+        run: >
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new
+          "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          "bash /root/onboarding-frontend-build.sh"
