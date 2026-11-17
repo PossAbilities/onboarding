@@ -30,7 +30,7 @@ jobs:
 
       - name: Package frontend (no VCS / build artifacts / secrets)
         run: >
-          tar czf onboarding-frontend.tar.gz
+          tar czf "$RUNNER_TEMP/onboarding-frontend.tar.gz"
           --exclude=./.git
           --exclude=./node_modules
           --exclude=./.next
@@ -47,7 +47,7 @@ jobs:
       - name: Upload tarball to the VPS
         run: >
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new
-          onboarding-frontend.tar.gz
+          "$RUNNER_TEMP/onboarding-frontend.tar.gz"
           "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/root/onboarding-frontend.tar.gz"
 
       - name: Build and restart on the VPS
