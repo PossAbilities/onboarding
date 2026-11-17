@@ -207,6 +207,11 @@ export async function getManagerById(
   return (await getManagers()).find((m) => m.id === id);
 }
 
+// Runtime allow-list: server actions receive `name` from the browser, so the TS type alone proves nothing.
+const COLLECTIONS: string[] = [
+  "videos", "testimonials", "directors", "benefits", "pets", "locations", "badges", "values", "managers",
+];
+
 /** `values` maps to the `company_values` table (`values` is a SQL keyword). */
 function tableFor(name: CollectionName): string {
   if (name === "values") return "company_values";
@@ -219,6 +224,7 @@ export async function saveCollectionItem(
   name: CollectionName,
   item: Record<string, unknown>,
 ): Promise<void> {
+  if (!COLLECTIONS.includes(name)) throw new Error("Unknown collection");
   if (!isSupabaseConfigured) {
     const arr = demoState()[name] as unknown as Record<string, unknown>[];
     const i = arr.findIndex((x) => x.id === item.id);
@@ -236,6 +242,7 @@ export async function deleteCollectionItem(
   name: CollectionName,
   id: string,
 ): Promise<void> {
+  if (!COLLECTIONS.includes(name)) throw new Error("Unknown collection");
   if (!isSupabaseConfigured) {
     const state = demoState() as unknown as Record<string, { id: string }[]>;
     state[name] = state[name].filter((x) => x.id !== id);
@@ -250,6 +257,7 @@ export async function reorderCollection(
   name: CollectionName,
   ids: string[],
 ): Promise<void> {
+  if (!COLLECTIONS.includes(name)) throw new Error("Unknown collection");
   if (!isSupabaseConfigured) {
     const arr = demoState()[name] as unknown as { id: string; order?: number }[];
     ids.forEach((id, i) => {

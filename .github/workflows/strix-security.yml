@@ -1,0 +1,57 @@
+name: Strix Security Check
+
+# Strix costs about $1 a scan in Claude credit, so it runs once a week (Ryan, 11 Nov 2026), not on
+# every pull request and push. Pull requests and pushes still list the check, but the job is skipped
+# (a skipped job counts as passed, so merging isn't blocked).
+#   - Weekly (Monday 03:00 UTC): scans only what changed on main in the last 7 days; nothing changed = no scan, no cost.
+#   - Run workflow (Actions tab): a full scan of the whole repo.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  strix-security:
+    name: Strix Security Scan
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: What changed this week
+        id: base
+        if: github.event_name == 'schedule'
+        run: |
+          base=$(git rev-list -1 --before='7 days ago' HEAD)
+          if [ -n "$base" ] && [ -z "$(git diff --name-only "$base" HEAD)" ]; then
+            echo "Nothing changed in the last 7 days; skipping the scan."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+
+      - name: Install Strix
+        if: steps.base.outputs.skip != 'true'
+        run: pipx install strix-agent
+
+      - name: Run Strix
+        if: steps.base.outputs.skip != 'true'
+        env:
+          STRIX_LLM: ${{ secrets.STRIX_LLM }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          BASE: ${{ steps.base.outputs.base }}
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] && [ -n "$BASE" ]; then
+            strix -n -t ./ --scan-mode quick --scope-mode diff --diff-base "$BASE"
+          else
+            strix -n -t ./ --scan-mode quick
+          fi
