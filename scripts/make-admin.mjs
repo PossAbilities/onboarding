@@ -1,7 +1,6 @@
 // Create (or promote) an admin user. Reads Supabase creds from .env.local.
-// Usage: node scripts/make-admin.mjs "email@domain" "Full Name" ["password"]
+// Usage: node scripts/make-admin.mjs "email@domain" "Full Name" "password"
 import { readFileSync } from "node:fs";
-import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 function env(key) {
@@ -15,11 +14,10 @@ const url = env("NEXT_PUBLIC_SUPABASE_URL");
 const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
 const email = process.argv[2];
 const fullName = process.argv[3] || "Admin";
-const password =
-  process.argv[4] || "Poss-" + randomBytes(12).toString("base64url") + "!";
+const password = process.argv[4];
 
-if (!url || !serviceKey || !email) {
-  console.error("Missing url/serviceKey/email.");
+if (!url || !serviceKey || !email || !password) {
+  console.error("Missing url/serviceKey/email/password.");
   process.exit(1);
 }
 
@@ -64,4 +62,3 @@ await admin
 
 console.log("\n✅ Admin ready");
 console.log("   email:    " + email);
-if (!process.argv[4]) console.log("   password: " + password + "  (change it after first login)");
