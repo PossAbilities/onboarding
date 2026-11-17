@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+const noopSubscribe = () => () => {};
 
 /**
  * Renders the PossAbilities support email as a clickable mailto link, assembled
@@ -16,8 +18,8 @@ import { useEffect, useState } from "react";
  * shows once hydrated.
  */
 export function ContactEmail({ className }: { className?: string }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // false during SSR and hydration, true on the client afterwards.
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
 
   // Assembled at runtime so the literal address is not in the server HTML.
   const address = ["digital", "possabilities.org.uk"].join("@");
