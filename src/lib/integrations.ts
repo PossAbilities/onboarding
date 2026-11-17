@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from "./config";
 import { createSupabaseServerClient } from "./supabase/server";
 import { demoState } from "./demo-store";
 import { renderTokens } from "./integration-events";
+import { sendWebhook } from "./webhook-guard";
 import type { Integration, IntegrationDelivery } from "./types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -156,7 +157,9 @@ async function send(
   integration: Integration,
   data: Record<string, string>,
 ): Promise<IntegrationDelivery> {
-  const url = renderTokens(integration.url, data);
+  // Token values are URL-encoded so employee-supplied data can't change the host or path shape.
+  const urlData = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, encodeURIComponent(v)]));
+  const url = renderTokens(integration.url, urlData);
   const headers: Record<string, string> = {};
   for (const h of integration.headers) {
     if (h.key.trim()) headers[renderTokens(h.key, data)] = renderTokens(h.value, data);
@@ -168,22 +171,12 @@ async function send(
   let ok = false;
   let error: string | null = null;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10_000);
   try {
-    const res = await fetch(url, {
-      method: integration.method,
-      headers,
-      body,
-      signal: controller.signal,
-    });
-    statusCode = res.status;
-    ok = res.ok;
-    if (!ok) error = `HTTP ${res.status}`;
+    statusCode = await sendWebhook(url, integration.method, headers, body);
+    ok = statusCode >= 200 && statusCode < 300;
+    if (!ok) error = `HTTP ${statusCode}`;
   } catch (e) {
     error = e instanceof Error ? e.message : "Request failed";
-  } finally {
-    clearTimeout(timer);
   }
 
   const delivery = {
