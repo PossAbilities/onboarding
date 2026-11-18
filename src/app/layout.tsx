@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
+import { siteUrl } from "@/lib/config";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -9,14 +10,30 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+const description =
+  "Your PossAbilities induction journey — welcome to the team. Live the life you choose.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "PossAbilities Journey",
     template: "%s · PossAbilities Journey",
   },
-  description:
-    "Your PossAbilities induction journey — welcome to the team. Live the life you choose.",
+  description,
   icons: { icon: "/favicon.ico" },
+  // og:image / twitter:image come from app/opengraph-image.tsx.
+  openGraph: {
+    type: "website",
+    siteName: "PossAbilities Journey",
+    title: "PossAbilities Journey",
+    description,
+    locale: "en_GB",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PossAbilities Journey",
+    description,
+  },
 };
 
 export default function RootLayout({
