@@ -17,6 +17,7 @@ const PUBLIC_PATHS = [
   "/api/cron",
   "/api/inbound",
   "/reference", // referees complete references without an account
+  "/opengraph-image", // social share preview, fetched by link-preview crawlers
 ];
 
 export async function proxy(request: NextRequest) {
