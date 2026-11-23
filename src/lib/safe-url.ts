@@ -102,3 +102,10 @@ export function findInvalidLinkField(input: Record<string, unknown>): string | n
   }
   return null;
 }
+
+/** A drawn signature from the signature pad: an inline PNG, at most ~600 KB. */
+export function isSignaturePng(value: string): boolean {
+  return (
+    value.length <= 800_000 && /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(value)
+  );
+}

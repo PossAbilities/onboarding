@@ -1007,7 +1007,10 @@ export async function submitIdea(
     return idea;
   }
 
-  const supabase = await createSupabaseServerClient();
+  // Ideas aren't insertable from a starter's own login (migration 0013): the
+  // server writes them, taking the author's name/photo from their profile so
+  // nobody can post as someone else or attach an outside image.
+  const supabase = await trustedWriter();
   const { data } = await supabase
     .from("ideas")
     .insert({
@@ -1023,8 +1026,7 @@ export async function submitIdea(
     .select()
     .single();
   if (data) {
-    const writer = await trustedWriter();
-    await writer
+    await supabase
       .from("user_badges")
       .upsert(
         { user_id: profile.id, badge_id: "the-pioneer", unlocked_at: now },
@@ -1363,7 +1365,9 @@ export async function updateMyProfileMeta(
     Object.assign(demoState().employeeMeta, meta);
     return;
   }
-  const supabase = await createSupabaseServerClient();
+  // metadata (badge name, pronouns, job title, photo) isn't user-writable
+  // directly (migration 0013); the server merges it for the signed-in user.
+  const supabase = await trustedWriter();
   const { data } = await supabase
     .from("profiles")
     .select("metadata")

@@ -22,7 +22,7 @@ import {
 } from "@/lib/data";
 import { dispatchEvent } from "@/lib/integrations";
 import { isOwnProfilePhotoUrl } from "@/lib/profile-photo";
-import { isSafeLinkUrl } from "@/lib/safe-url";
+import { isSafeLinkUrl, isSignaturePng } from "@/lib/safe-url";
 
 export async function completeModuleAction(moduleId: string, score?: number) {
   const profile = await requireProfile();
@@ -133,6 +133,10 @@ export async function signDocumentAction(
   const profile = await requireProfile();
   if (!signedName.trim()) {
     return { ok: false as const, message: "Please type your full name to sign." };
+  }
+  // The drawn signature must be the signature pad's own PNG, nothing else.
+  if (signatureData !== null && !isSignaturePng(signatureData)) {
+    return { ok: false as const, message: "That signature couldn't be read. Please sign again." };
   }
   const signed = await signDocument(profile, documentId, signedName.trim(), signatureData);
   if (!signed) {

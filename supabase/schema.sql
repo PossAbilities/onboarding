@@ -574,8 +574,8 @@ revoke insert, update, delete on public.progress from anon, authenticated;
 revoke insert, update, delete on public.user_badges from anon, authenticated;
 revoke insert, update, delete on public.easter_eggs from anon, authenticated;
 
--- ── 6. Starters can't edit their own XP, avatar, status, start, manager,
---       role or department (admins and the service role can) ───────────────
+-- ── 6. Starters can't edit their own profile fields except last activity
+--       (admins and the service role can) ───────────────────────────────────
 create or replace function public.guard_profile_self_update ()
 returns trigger
 language plpgsql
@@ -594,6 +594,9 @@ begin
      or new.manager_id is distinct from old.manager_id
      or new.role_tag is distinct from old.role_tag
      or new.department is distinct from old.department
+     -- Shown to other staff (leaderboard, ideas, ID badge): server/admin only.
+     or new.full_name is distinct from old.full_name
+     or new.metadata is distinct from old.metadata
      -- Identity and admin rights: also locked by 0011's column grants, kept
      -- here too so a database that missed 0011 is still safe.
      or new.is_admin is distinct from old.is_admin
@@ -611,3 +614,20 @@ drop trigger if exists profiles_guard_self_update on public.profiles;
 create trigger profiles_guard_self_update
   before update on public.profiles
   for each row execute function public.guard_profile_self_update ();
+
+-- ── 7. Ideas are written by the server only ────────────────────────────────
+-- The app inserts ideas with the service role, copying the author's name and
+-- photo from their profile, so ideas can't be posted under someone else's
+-- name or with an outside image. The constrained insert policy stays as a
+-- backstop.
+revoke insert, update, delete on public.ideas from anon, authenticated;
+
+-- ── 8. Signatures are the signature pad's PNG ──────────────────────────────
+-- NOT VALID: checks new and changed rows only; existing signatures are kept.
+alter table public.document_signatures
+  drop constraint if exists document_signatures_signature_png;
+alter table public.document_signatures
+  add constraint document_signatures_signature_png check (
+    signature_data is null
+    or signature_data ~ '^data:image/png;base64,[A-Za-z0-9+/]+={0,2}$'
+  ) not valid;
