@@ -33,7 +33,8 @@ import {
   saveIntegration,
   testIntegration,
 } from "@/lib/integrations";
-import { sampleDataFor } from "@/lib/integration-events";
+import { isReservedHeaderKey, sampleDataFor } from "@/lib/integration-events";
+import { findInvalidLinkField, findUnsafeUrl, isSafeImageUrl } from "@/lib/safe-url";
 import { createApiKey, revokeApiKey } from "@/lib/inbound";
 import type {
   ApiKey,
@@ -180,6 +181,20 @@ export async function saveModuleAction(
   if (!mod.title?.trim()) return { ok: false, message: "A title is required." };
   if (!mod.slug?.trim()) return { ok: false, message: "A URL slug is required." };
 
+  // Block script-capable URLs (javascript:, data:text/html…) anywhere in the
+  // module, including gallery image URLs inside content blocks.
+  const unsafe = findUnsafeUrl({ heroMediaUrl: mod.heroMediaUrl, content: mod.content });
+  if (unsafe) {
+    return { ok: false, message: `That link isn't allowed (${unsafe}). Use an https:// address.` };
+  }
+  const blocks = Array.isArray(mod.content) ? mod.content : [];
+  for (const block of blocks) {
+    const images = (block as { images?: unknown }).images;
+    if (Array.isArray(images) && images.some((u) => typeof u !== "string" || !isSafeImageUrl(u))) {
+      return { ok: false, message: "Gallery images must be https:// addresses or uploads." };
+    }
+  }
+
   // Normalise the slug to be URL-safe.
   const slug = mod.slug
     .toLowerCase()
@@ -235,6 +250,12 @@ export async function saveCollectionItemAction(
 ): Promise<{ ok: boolean; message: string }> {
   await requireAdmin();
   if (!item?.id) return { ok: false, message: "Missing item id." };
+  // Link fields (calendarUrl, photoUrl, videoUrl…) must be web links or
+  // uploads, never javascript:/data: payloads.
+  const badField = findInvalidLinkField(item) ?? findUnsafeUrl(item);
+  if (badField) {
+    return { ok: false, message: `That link isn't allowed (${badField}). Use an https:// address.` };
+  }
   await saveCollectionItem(name, item);
   revalidateLibrary();
   return { ok: true, message: "Saved." };
@@ -403,8 +424,15 @@ export async function saveIntegrationAction(
   await requireAdmin();
   if (!integration?.id) return { ok: false, message: "Missing id." };
   if (!integration.name?.trim()) return { ok: false, message: "Give it a name." };
-  if (!/^https?:\/\//.test(integration.url)) {
-    return { ok: false, message: "Enter a valid https:// endpoint URL." };
+  // Must match webhook-guard.ts, which only ever sends to https:// endpoints.
+  if (!/^https:\/\//.test(integration.url)) {
+    return { ok: false, message: "Enter a valid https:// URL." };
+  }
+  const reservedHeader = (integration.headers ?? []).find((h) =>
+    isReservedHeaderKey(h.key),
+  );
+  if (reservedHeader) {
+    return { ok: false, message: `"${reservedHeader.key}" isn't a valid header name.` };
   }
   await saveIntegration(integration);
   revalidatePath("/admin/integrations");

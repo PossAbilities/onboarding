@@ -8,6 +8,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
  * browser — so a database leak alone cannot reveal the secrets.
  */
 const ALGO = "aes-256-gcm";
+const AUTH_TAG_BYTES = 16;
 
 function getKey(): Buffer | null {
   const hex = process.env.CREDENTIALS_KEY ?? "";
@@ -33,8 +34,13 @@ export function decryptSecret(blob: string | null): string {
   if (!key || !blob) return "";
   try {
     const [ivB64, tagB64, dataB64] = blob.split(".");
-    const decipher = createDecipheriv(ALGO, key, Buffer.from(ivB64, "base64"));
-    decipher.setAuthTag(Buffer.from(tagB64, "base64"));
+    const tag = Buffer.from(tagB64, "base64");
+    // Require the full 16-byte GCM tag; a truncated tag is far easier to forge.
+    if (tag.length !== AUTH_TAG_BYTES) return "";
+    const decipher = createDecipheriv(ALGO, key, Buffer.from(ivB64, "base64"), {
+      authTagLength: AUTH_TAG_BYTES,
+    });
+    decipher.setAuthTag(tag);
     return Buffer.concat([
       decipher.update(Buffer.from(dataB64, "base64")),
       decipher.final(),

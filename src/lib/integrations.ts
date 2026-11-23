@@ -2,7 +2,7 @@ import "server-only";
 import { isSupabaseConfigured } from "./config";
 import { createSupabaseServerClient } from "./supabase/server";
 import { demoState } from "./demo-store";
-import { renderTokens } from "./integration-events";
+import { isReservedHeaderKey, jsonStringEscape, renderTokens } from "./integration-events";
 import { sendWebhook } from "./webhook-guard";
 import type { Integration, IntegrationDelivery } from "./types";
 
@@ -153,19 +153,50 @@ async function logDelivery(d: Omit<IntegrationDelivery, "id" | "createdAt">) {
   }
 }
 
+/** Header values must stay on one line. */
+function stripLineBreaks(value: string): string {
+  return value.replace(/[\r\n]+/g, " ");
+}
+
+/**
+ * Pick how to escape token values in the request body: form-encoded bodies get
+ * URL encoding, JSON templates get JSON string escaping (so a quote or brace in
+ * a starter's name can't add or change keys), and plain text is left as is.
+ */
+function bodyEscaper(
+  template: string,
+  headers: Record<string, string>,
+): (value: string) => string {
+  const contentType =
+    Object.entries(headers).find(([k]) => k.toLowerCase() === "content-type")?.[1] ?? "";
+  if (/x-www-form-urlencoded/i.test(contentType)) return encodeURIComponent;
+  const looksJson = /^\s*[[{]/.test(template);
+  if (looksJson || /json/i.test(contentType)) return jsonStringEscape;
+  return (v) => v; // plain text: no structure to break
+
+}
+
 async function send(
   integration: Integration,
   data: Record<string, string>,
 ): Promise<IntegrationDelivery> {
-  // Token values are URL-encoded so employee-supplied data can't change the host or path shape.
-  const urlData = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, encodeURIComponent(v)]));
-  const url = renderTokens(integration.url, urlData);
-  const headers: Record<string, string> = {};
+  // Each token value is encoded for where it lands, so employee-supplied text
+  // can't change the URL's host/path, inject headers, or add JSON keys.
+  const url = renderTokens(integration.url, data, encodeURIComponent);
+
+  // Null-prototype object + fixed header names: an admin-entered "__proto__"
+  // (or similar) can't reach Object.prototype. Names are never templated.
+  const headers = Object.create(null) as Record<string, string>;
   for (const h of integration.headers) {
-    if (h.key.trim()) headers[renderTokens(h.key, data)] = renderTokens(h.value, data);
+    const key = h.key.trim();
+    if (!key || isReservedHeaderKey(key)) continue;
+    headers[key] = renderTokens(h.value, data, stripLineBreaks);
   }
+
   const hasBody = integration.method !== "GET";
-  const body = hasBody ? renderTokens(integration.bodyTemplate, data) : undefined;
+  const body = hasBody
+    ? renderTokens(integration.bodyTemplate, data, bodyEscaper(integration.bodyTemplate, headers))
+    : undefined;
 
   let statusCode: number | null = null;
   let ok = false;

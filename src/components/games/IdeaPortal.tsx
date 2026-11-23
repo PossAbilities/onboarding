@@ -35,7 +35,21 @@ export function IdeaPortal({ initialIdeas }: { initialIdeas: Idea[] }) {
         .map((i) => (i.id === id ? { ...i, votes: i.votes + 1 } : i))
         .sort((a, b) => b.votes - a.votes),
     );
-    startTransition(() => voteIdeaAction(id));
+    startTransition(async () => {
+      const { result } = await voteIdeaAction(id);
+      if (result === "voted") return;
+      // Server didn't count it (already voted, or an error): undo the +1.
+      setIdeas((list) =>
+        list
+          .map((i) => (i.id === id ? { ...i, votes: i.votes - 1 } : i))
+          .sort((a, b) => b.votes - a.votes),
+      );
+      if (result === "error") {
+        setVoted((v) => v.filter((x) => x !== id));
+        setMsg("Your vote couldn't be saved. Please try again.");
+        setTimeout(() => setMsg(null), 4000);
+      }
+    });
   };
 
   const submit = () => {

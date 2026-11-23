@@ -253,11 +253,8 @@ create table if not exists public.app_settings (
   updated_at timestamptz default now()
 );
 
--- ── Vote increment helper ───────────────────────────────────────────────────
-create or replace function public.increment_idea_votes (idea_id uuid)
-returns void language sql as $$
-  update public.ideas set votes = votes + 1 where id = idea_id;
-$$;
+-- (Idea voting — one vote per person — is set up at the end of this file:
+--  idea_votes + vote_for_idea(). See migrations/0013_security_fixes.sql.)
 
 -- ── Auto-create a profile when a user accepts their invite / signs up ───────
 create or replace function public.handle_new_user ()
@@ -307,18 +304,38 @@ create policy "profiles_select" on public.profiles for select
   using (auth.uid() = id or public.is_admin());
 drop policy if exists "profiles_update_self" on public.profiles;
 create policy "profiles_update_self" on public.profiles for update
-  using (auth.uid() = id or public.is_admin());
+  using (auth.uid() = id or public.is_admin())
+  with check (auth.uid() = id or public.is_admin());
+
+-- Column lockdown (same as migrations/0011): users may update only these
+-- columns of their row. is_admin, invited_by, id and email are service-role
+-- only. The guard trigger at the end of this file narrows it further.
+revoke update on public.profiles from anon, authenticated;
+grant update (
+  full_name,
+  avatar_url,
+  role_tag,
+  department,
+  manager_id,
+  journey_points,
+  status,
+  started_at,
+  last_activity_at,
+  metadata
+) on public.profiles to authenticated;
 
 -- Progress / badges / eggs: owner-only (admins read via service role).
 drop policy if exists "progress_owner" on public.progress;
-create policy "progress_owner" on public.progress for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- Read-only for the owner; the app writes progress/badges/eggs with the
+-- service role after its server-side checks (see migrations/0013).
+create policy "progress_owner" on public.progress for select
+  using (auth.uid() = user_id);
 drop policy if exists "badges_owner" on public.user_badges;
-create policy "badges_owner" on public.user_badges for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "badges_owner" on public.user_badges for select
+  using (auth.uid() = user_id);
 drop policy if exists "eggs_owner" on public.easter_eggs;
-create policy "eggs_owner" on public.easter_eggs for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "eggs_owner" on public.easter_eggs for select
+  using (auth.uid() = user_id);
 
 -- Integrations: admin-only (contain API keys). Dispatcher reads via service role.
 alter table public.integrations enable row level security;
@@ -356,13 +373,15 @@ drop policy if exists "sig_admin_read" on public.document_signatures;
 create policy "sig_admin_read" on public.document_signatures for select
   using (public.is_admin());
 
--- Ideas: everyone signed-in can read; authors can insert; anyone can vote (update votes).
+-- Ideas: everyone signed-in can read; authors can insert; only admins can update.
+-- Votes go through vote_for_idea() (security definer), not direct updates.
 drop policy if exists "ideas_select" on public.ideas;
 create policy "ideas_select" on public.ideas for select using (auth.role() = 'authenticated');
 drop policy if exists "ideas_insert" on public.ideas;
-create policy "ideas_insert" on public.ideas for insert with check (auth.uid() = author_id);
+create policy "ideas_insert" on public.ideas for insert
+  with check (auth.uid() = author_id and votes = 1 and status = 'submitted');
 drop policy if exists "ideas_update" on public.ideas;
-create policy "ideas_update" on public.ideas for update using (auth.role() = 'authenticated');
+create policy "ideas_update" on public.ideas for update using (public.is_admin()) with check (public.is_admin());
 
 -- Content tables: any signed-in user can READ; only admins can WRITE.
 -- (The cron/invite paths use the service-role key, which bypasses RLS.)
@@ -473,3 +492,142 @@ begin
     execute format('create policy "%s_write" on public.%I for all using (public.is_admin()) with check (public.is_admin())', t, t);
   end loop;
 end $$;
+
+-- ════ Security fixes (Strix, Nov 2026) — mirrors migrations/0013 ════
+-- ── 1. Per-user vote deduplication ─────────────────────────────────────────
+create table if not exists public.idea_votes (
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  idea_id uuid not null references public.ideas (id) on delete cascade,
+  voted_at timestamptz not null default now(),
+  primary key (user_id, idea_id)
+);
+
+alter table public.idea_votes enable row level security;
+
+-- Starters can see their own votes; all writes go through vote_for_idea().
+drop policy if exists "idea_votes_select_own" on public.idea_votes;
+create policy "idea_votes_select_own" on public.idea_votes
+  for select using (auth.uid() = user_id);
+
+grant select on public.idea_votes to authenticated;
+grant select, insert, update, delete on public.idea_votes to service_role;
+
+create or replace function public.vote_for_idea (p_idea_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception 'Not signed in' using errcode = '28000';
+  end if;
+
+  -- Unknown idea, or your own idea (its starting vote is already yours).
+  if not exists (
+    select 1 from public.ideas where id = p_idea_id and author_id <> v_user
+  ) then
+    return false;
+  end if;
+
+  insert into public.idea_votes (user_id, idea_id)
+  values (v_user, p_idea_id)
+  on conflict (user_id, idea_id) do nothing;
+
+  if not found then
+    return false; -- already voted
+  end if;
+
+  update public.ideas set votes = votes + 1 where id = p_idea_id;
+  return true;
+end;
+$$;
+
+revoke all on function public.vote_for_idea (uuid) from public, anon;
+grant execute on function public.vote_for_idea (uuid) to authenticated, service_role;
+
+drop function if exists public.increment_idea_votes (uuid);
+
+-- ── 3. Signatures must reference an existing document ──────────────────────
+create or replace function public.check_signature_document ()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from public.documents where id = new.document_id) then
+    raise exception 'Unknown document %', new.document_id using errcode = '23503';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists document_signatures_check_document on public.document_signatures;
+create trigger document_signatures_check_document
+  before insert or update of document_id on public.document_signatures
+  for each row execute function public.check_signature_document ();
+
+-- ── 5. Progress, badges and eggs: read-only for the owner ──────────────────
+revoke insert, update, delete on public.progress from anon, authenticated;
+revoke insert, update, delete on public.user_badges from anon, authenticated;
+revoke insert, update, delete on public.easter_eggs from anon, authenticated;
+
+-- ── 6. Starters can't edit their own profile fields except last activity
+--       (admins and the service role can) ───────────────────────────────────
+create or replace function public.guard_profile_self_update ()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- No end-user JWT (service role / SQL editor) or an admin: allowed.
+  if auth.uid() is null or public.is_admin() then
+    return new;
+  end if;
+  if new.journey_points is distinct from old.journey_points
+     or new.avatar_url is distinct from old.avatar_url
+     or new.status is distinct from old.status
+     or new.started_at is distinct from old.started_at
+     or new.manager_id is distinct from old.manager_id
+     or new.role_tag is distinct from old.role_tag
+     or new.department is distinct from old.department
+     -- Shown to other staff (leaderboard, ideas, ID badge): server/admin only.
+     or new.full_name is distinct from old.full_name
+     or new.metadata is distinct from old.metadata
+     -- Identity and admin rights: also locked by 0011's column grants, kept
+     -- here too so a database that missed 0011 is still safe.
+     or new.is_admin is distinct from old.is_admin
+     or new.invited_by is distinct from old.invited_by
+     or new.email is distinct from old.email
+     or new.id is distinct from old.id then
+    raise exception 'That profile field can only be changed by the app or an admin'
+      using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_guard_self_update on public.profiles;
+create trigger profiles_guard_self_update
+  before update on public.profiles
+  for each row execute function public.guard_profile_self_update ();
+
+-- ── 7. Ideas are written by the server only ────────────────────────────────
+-- The app inserts ideas with the service role, copying the author's name and
+-- photo from their profile, so ideas can't be posted under someone else's
+-- name or with an outside image. The constrained insert policy stays as a
+-- backstop.
+revoke insert, update, delete on public.ideas from anon, authenticated;
+
+-- ── 8. Signatures are the signature pad's PNG ──────────────────────────────
+-- NOT VALID: checks new and changed rows only; existing signatures are kept.
+alter table public.document_signatures
+  drop constraint if exists document_signatures_signature_png;
+alter table public.document_signatures
+  add constraint document_signatures_signature_png check (
+    signature_data is null
+    or signature_data ~ '^data:image/png;base64,[A-Za-z0-9+/]+={0,2}$'
+  ) not valid;

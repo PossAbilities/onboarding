@@ -1,7 +1,8 @@
 import "server-only";
 import { isSupabaseConfigured } from "./config";
 import { createSupabaseServerClient } from "./supabase/server";
-import { computeJourney } from "./journey";
+import { computeJourney, statusFor } from "./journey";
+import { EASTER_EGG_IDS } from "./seed";
 import { demoState } from "./demo-store";
 import {
   DEPARTMENTS,
@@ -347,7 +348,10 @@ export async function listMyCredentials(profile: Profile): Promise<Credential[]>
   const nowMs = Date.now();
   if (!isSupabaseConfigured) {
     return demoState()
-      .credentials.filter((c) => !c.expiresAt || new Date(c.expiresAt).getTime() > nowMs)
+      .credentials.filter((c) => c.ownerId === profile.id)
+      .filter((c) => !c.expiresAt || new Date(c.expiresAt).getTime() > nowMs)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .map(({ ownerId, ...c }) => c)
       .sort((a, b) => a.platform.localeCompare(b.platform));
   }
   const { decryptSecret } = await import("./crypto");
@@ -378,6 +382,7 @@ export async function addCredential(
   const expiresAt = vaultExpiry(profile);
   if (!isSupabaseConfigured) {
     demoState().credentials.push({
+      ownerId: profile.id,
       id: `cred-${Date.now()}`,
       platform: input.platform,
       username: input.username,
@@ -410,8 +415,12 @@ export async function addCredential(
 
 export async function deleteCredential(profile: Profile, id: string): Promise<void> {
   if (!isSupabaseConfigured) {
+    // Only the owner's own entry can be removed, mirroring the
+    // .eq("user_id", profile.id) guard in connected mode.
     const s = demoState();
-    s.credentials = s.credentials.filter((c) => c.id !== id);
+    s.credentials = s.credentials.filter(
+      (c) => !(c.id === id && c.ownerId === profile.id),
+    );
     return;
   }
   const supabase = await createSupabaseServerClient();
@@ -556,7 +565,10 @@ export async function signDocument(
   documentId: string,
   signedName: string,
   signatureData: string | null,
-): Promise<void> {
+): Promise<boolean> {
+  // Only real documents can be signed (no orphan signature records).
+  const exists = (await getDocuments()).some((d) => d.id === documentId);
+  if (!exists) return false;
   const now = new Date().toISOString();
   if (!isSupabaseConfigured) {
     const sigs = demoState().signatures;
@@ -568,10 +580,10 @@ export async function signDocument(
     } else {
       sigs.push({ documentId, signedName, signatureData, signedAt: now });
     }
-    return;
+    return true;
   }
   const supabase = await createSupabaseServerClient();
-  await supabase.from("document_signatures").upsert(
+  const { error } = await supabase.from("document_signatures").upsert(
     {
       user_id: profile.id,
       document_id: documentId,
@@ -581,6 +593,7 @@ export async function signDocument(
     },
     { onConflict: "user_id,document_id" },
   );
+  return !error;
 }
 
 /* Admin document management */
@@ -724,6 +737,17 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
 
 /* ───────────────────────── Journey / progress ───────────────────── */
 
+/**
+ * Progress, badges, easter eggs, XP and avatars are read-only for a starter's
+ * own login (see migration 0013), so they can't be forged through the public
+ * Supabase API. The server writes them with the service-role client, and only
+ * after the checks in this file have passed.
+ */
+async function trustedWriter() {
+  const { createSupabaseAdminClient } = await import("./supabase/admin");
+  return createSupabaseAdminClient();
+}
+
 async function getProgressRecords(userId: string): Promise<ModuleProgress[]> {
   if (!isSupabaseConfigured) {
     return Object.values(demoState().progress);
@@ -793,9 +817,20 @@ export async function completeModule(
   if (!mod) return { badgeId: null, xp: 0 };
   const now = new Date().toISOString();
 
+  // Enforce the journey order on the server: a starter can't complete (or earn
+  // XP for) a module that is still locked. Admins preview everything unlocked.
+  const records = await getProgressRecords(profile.id);
+  if (!profile.isAdmin) {
+    const { progress } = computeJourney(records, await getModules());
+    if (statusFor(moduleId, progress) === "locked") return { badgeId: null, xp: 0 };
+  }
+  const alreadyCompleted = records.some(
+    (r) => r.moduleId === moduleId && r.status === "completed",
+  );
+
   if (!isSupabaseConfigured) {
     const state = demoState();
-    const already = state.progress[moduleId]?.status === "completed";
+    const already = alreadyCompleted;
     state.progress[moduleId] = {
       moduleId,
       status: "completed",
@@ -812,7 +847,7 @@ export async function completeModule(
     return { badgeId: already ? null : mod.badgeId, xp: mod.rewardXp };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await trustedWriter();
   await supabase.from("progress").upsert(
     {
       user_id: profile.id,
@@ -823,6 +858,15 @@ export async function completeModule(
     },
     { onConflict: "user_id,module_id" },
   );
+  // Re-completing a finished module (e.g. replaying a game to improve the
+  // score) updates the record but never awards the XP or badge twice.
+  if (alreadyCompleted) {
+    await supabase
+      .from("profiles")
+      .update({ last_activity_at: now })
+      .eq("id", profile.id);
+    return { badgeId: null, xp: 0 };
+  }
   await supabase
     .from("profiles")
     .update({
@@ -857,6 +901,10 @@ export async function collectEasterEgg(
   profile: Profile,
   eggId: string,
 ): Promise<{ found: number; unlockedNavigator: boolean }> {
+  // Only the real hidden eggs count — made-up IDs can't fill the Navigator badge.
+  if (!EASTER_EGG_IDS.has(eggId)) {
+    return { found: await getEasterEggsFound(profile), unlockedNavigator: false };
+  }
   if (!isSupabaseConfigured) {
     const state = demoState();
     if (!state.easterEggs.includes(eggId)) state.easterEggs.push(eggId);
@@ -873,14 +921,15 @@ export async function collectEasterEgg(
     return { found, unlockedNavigator };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await trustedWriter();
   await supabase
     .from("easter_eggs")
     .upsert({ user_id: profile.id, egg_id: eggId }, { onConflict: "user_id,egg_id" });
   const { count } = await supabase
     .from("easter_eggs")
     .select("egg_id", { count: "exact", head: true })
-    .eq("user_id", profile.id);
+    .eq("user_id", profile.id)
+    .in("egg_id", [...EASTER_EGG_IDS]);
   const found = count ?? 0;
   let unlockedNavigator = false;
   if (found >= 3) {
@@ -903,12 +952,15 @@ export async function collectEasterEgg(
 }
 
 export async function getEasterEggsFound(profile: Profile): Promise<number> {
-  if (!isSupabaseConfigured) return demoState().easterEggs.length;
+  if (!isSupabaseConfigured) {
+    return demoState().easterEggs.filter((e) => EASTER_EGG_IDS.has(e)).length;
+  }
   const supabase = await createSupabaseServerClient();
   const { count } = await supabase
     .from("easter_eggs")
     .select("egg_id", { count: "exact", head: true })
-    .eq("user_id", profile.id);
+    .eq("user_id", profile.id)
+    .in("egg_id", [...EASTER_EGG_IDS]);
   return count ?? 0;
 }
 
@@ -955,7 +1007,10 @@ export async function submitIdea(
     return idea;
   }
 
-  const supabase = await createSupabaseServerClient();
+  // Ideas aren't insertable from a starter's own login (migration 0013): the
+  // server writes them, taking the author's name/photo from their profile so
+  // nobody can post as someone else or attach an outside image.
+  const supabase = await trustedWriter();
   const { data } = await supabase
     .from("ideas")
     .insert({
@@ -970,23 +1025,40 @@ export async function submitIdea(
     })
     .select()
     .single();
-  await supabase
-    .from("user_badges")
-    .upsert(
-      { user_id: profile.id, badge_id: "the-pioneer", unlocked_at: now },
-      { onConflict: "user_id,badge_id" },
-    );
+  if (data) {
+    await supabase
+      .from("user_badges")
+      .upsert(
+        { user_id: profile.id, badge_id: "the-pioneer", unlocked_at: now },
+        { onConflict: "user_id,badge_id" },
+      );
+  }
   return data ? mapIdeaRow(data) : idea;
 }
 
-export async function voteIdea(ideaId: string): Promise<void> {
+/**
+ * One vote per person per idea. Returns "voted", "already" (they'd voted
+ * before), or "error". The database function records the vote and bumps the
+ * counter in one transaction, keyed on the signed-in user.
+ */
+export async function voteIdea(
+  profile: Profile,
+  ideaId: string,
+): Promise<"voted" | "already" | "error"> {
   if (!isSupabaseConfigured) {
-    const idea = demoState().ideas.find((i) => i.id === ideaId);
-    if (idea) idea.votes += 1;
-    return;
+    const state = demoState();
+    const idea = state.ideas.find((i) => i.id === ideaId);
+    if (!idea) return "error";
+    const key = `${profile.id}:${ideaId}`;
+    if (state.ideaVotes.includes(key)) return "already";
+    state.ideaVotes.push(key);
+    idea.votes += 1;
+    return "voted";
   }
   const supabase = await createSupabaseServerClient();
-  await supabase.rpc("increment_idea_votes", { idea_id: ideaId });
+  const { data, error } = await supabase.rpc("vote_for_idea", { p_idea_id: ideaId });
+  if (error) return "error";
+  return data === true ? "voted" : "already";
 }
 
 /* ───────────────────────── Admin: starters & invites ────────────── */
@@ -1275,7 +1347,9 @@ export async function updateMyAvatar(
     demoState().employeeAvatarUrl = url;
     return;
   }
-  const supabase = await createSupabaseServerClient();
+  // Only called after saveProfilePhotoAction has checked the URL is the
+  // starter's own upload; the column itself is not user-writable.
+  const supabase = await trustedWriter();
   await supabase
     .from("profiles")
     .update({ avatar_url: url, last_activity_at: new Date().toISOString() })
@@ -1291,7 +1365,9 @@ export async function updateMyProfileMeta(
     Object.assign(demoState().employeeMeta, meta);
     return;
   }
-  const supabase = await createSupabaseServerClient();
+  // metadata (badge name, pronouns, job title, photo) isn't user-writable
+  // directly (migration 0013); the server merges it for the signed-in user.
+  const supabase = await trustedWriter();
   const { data } = await supabase
     .from("profiles")
     .select("metadata")

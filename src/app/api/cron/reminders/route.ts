@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { sendStalledReminders } from "@/lib/mailer";
 import { purgeExpiredCredentials } from "@/lib/data";
@@ -10,10 +11,19 @@ export const dynamic = "force-dynamic";
 function authorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET ?? "";
   if (!secret) return false; // must be configured to run
-  const header = request.headers.get("x-cron-secret");
-  const query = request.nextUrl.searchParams.get("key");
-  const bearer = request.headers.get("authorization")?.replace("Bearer ", "");
-  return header === secret || query === secret || bearer === secret;
+  // Header-only: a secret in the query string (?key=) ends up in access logs,
+  // proxy logs and browser history, so it is deliberately not accepted.
+  const header = request.headers.get("x-cron-secret") ?? "";
+  const auth = request.headers.get("authorization") ?? "";
+  const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  return safeEqual(header, secret) || safeEqual(bearer, secret);
+}
+
+/** Constant-time comparison so the secret can't be guessed from response timing. */
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ab.length === bb.length && timingSafeEqual(ab, bb);
 }
 
 async function run(request: NextRequest) {

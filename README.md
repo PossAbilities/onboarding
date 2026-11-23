@@ -103,6 +103,9 @@ the built-in HTML5 player (no third-party embeds).
    `/api/cron/reminders` route, which finds active starters with no activity for
    `REMINDER_STALE_DAYS`+ days and emails them the enabled **reminder** template.
    - Set the **same `CRON_SECRET`** in Netlify so the function can authenticate.
+   - Any other scheduler must send the secret in the `x-cron-secret` header (or
+     `Authorization: Bearer …`). A `?key=` query string is **not** accepted, as it
+     leaks into server logs.
    - Trigger it any time from **Admin → Email Templates → "Send reminders now"**.
    - The reminder job needs both Supabase (to find starters) and Resend (to send).
 
@@ -142,6 +145,13 @@ checklist, reference attachment, reminder frequency). Email wording is in **Emai
 and videos/testimonials in **Content Library**.
 
 **Existing Supabase projects:** run `supabase/migrations/0012_digital_recruitment.sql`.
+
+**Security fixes (Nov 2026):** existing databases also need
+`supabase/migrations/0013_security_fixes.sql` — one BIG Idea vote per person, ideas
+editable by admins only, and signatures must match a real document. Until it's run,
+voting shows "couldn't be saved" rather than allowing unlimited votes. Make sure
+`0011_admin_users.sql` has also been applied (it stops starters making themselves admin);
+0013 adds the same protection again as a backstop.
 Candidate data (DOB, NI number, etc.) is readable only by the candidate and admins, and is
 written only through the app's server actions.
 
