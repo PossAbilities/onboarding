@@ -737,6 +737,17 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
 
 /* ───────────────────────── Journey / progress ───────────────────── */
 
+/**
+ * Progress, badges, easter eggs, XP and avatars are read-only for a starter's
+ * own login (see migration 0013), so they can't be forged through the public
+ * Supabase API. The server writes them with the service-role client, and only
+ * after the checks in this file have passed.
+ */
+async function trustedWriter() {
+  const { createSupabaseAdminClient } = await import("./supabase/admin");
+  return createSupabaseAdminClient();
+}
+
 async function getProgressRecords(userId: string): Promise<ModuleProgress[]> {
   if (!isSupabaseConfigured) {
     return Object.values(demoState().progress);
@@ -836,7 +847,7 @@ export async function completeModule(
     return { badgeId: already ? null : mod.badgeId, xp: mod.rewardXp };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await trustedWriter();
   await supabase.from("progress").upsert(
     {
       user_id: profile.id,
@@ -910,7 +921,7 @@ export async function collectEasterEgg(
     return { found, unlockedNavigator };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await trustedWriter();
   await supabase
     .from("easter_eggs")
     .upsert({ user_id: profile.id, egg_id: eggId }, { onConflict: "user_id,egg_id" });
@@ -1011,12 +1022,15 @@ export async function submitIdea(
     })
     .select()
     .single();
-  await supabase
-    .from("user_badges")
-    .upsert(
-      { user_id: profile.id, badge_id: "the-pioneer", unlocked_at: now },
-      { onConflict: "user_id,badge_id" },
-    );
+  if (data) {
+    const writer = await trustedWriter();
+    await writer
+      .from("user_badges")
+      .upsert(
+        { user_id: profile.id, badge_id: "the-pioneer", unlocked_at: now },
+        { onConflict: "user_id,badge_id" },
+      );
+  }
   return data ? mapIdeaRow(data) : idea;
 }
 
@@ -1331,7 +1345,9 @@ export async function updateMyAvatar(
     demoState().employeeAvatarUrl = url;
     return;
   }
-  const supabase = await createSupabaseServerClient();
+  // Only called after saveProfilePhotoAction has checked the URL is the
+  // starter's own upload; the column itself is not user-writable.
+  const supabase = await trustedWriter();
   await supabase
     .from("profiles")
     .update({ avatar_url: url, last_activity_at: new Date().toISOString() })

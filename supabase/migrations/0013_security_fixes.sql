@@ -9,6 +9,13 @@
 --    (The app never updates ideas from a starter's session.)
 -- 3. A signature must point at a real document. Enforced with a trigger on
 --    insert/update so existing signatures and document deletes are unaffected.
+-- 4. New ideas must start at 1 vote / 'submitted' (no forged counts on insert),
+--    and authors can't add a second vote to their own idea.
+-- 5. Journey progress, badges and easter eggs are read-only for a starter's
+--    own login. The app writes them with the service-role key after its
+--    server-side checks (locked modules, real egg IDs, no repeat XP).
+-- 6. A starter can't change their own XP, avatar, status, start date or
+--    manager through the API; the app (service role) and admins can.
 --
 -- Safe to run more than once.
 
@@ -41,6 +48,13 @@ declare
 begin
   if v_user is null then
     raise exception 'Not signed in' using errcode = '28000';
+  end if;
+
+  -- Unknown idea, or your own idea (its starting vote is already yours).
+  if not exists (
+    select 1 from public.ideas where id = p_idea_id and author_id <> v_user
+  ) then
+    return false;
   end if;
 
   insert into public.idea_votes (user_id, idea_id)
@@ -84,3 +98,54 @@ drop trigger if exists document_signatures_check_document on public.document_sig
 create trigger document_signatures_check_document
   before insert or update of document_id on public.document_signatures
   for each row execute function public.check_signature_document ();
+
+-- ── 4. Ideas start at one vote ─────────────────────────────────────────────
+drop policy if exists "ideas_insert" on public.ideas;
+create policy "ideas_insert" on public.ideas
+  for insert with check (
+    auth.uid() = author_id and votes = 1 and status = 'submitted'
+  );
+
+-- ── 5. Progress, badges and eggs: read-only for the owner ──────────────────
+drop policy if exists "progress_owner" on public.progress;
+create policy "progress_owner" on public.progress
+  for select using (auth.uid() = user_id);
+drop policy if exists "badges_owner" on public.user_badges;
+create policy "badges_owner" on public.user_badges
+  for select using (auth.uid() = user_id);
+drop policy if exists "eggs_owner" on public.easter_eggs;
+create policy "eggs_owner" on public.easter_eggs
+  for select using (auth.uid() = user_id);
+
+revoke insert, update, delete on public.progress from anon, authenticated;
+revoke insert, update, delete on public.user_badges from anon, authenticated;
+revoke insert, update, delete on public.easter_eggs from anon, authenticated;
+
+-- ── 6. Starters can't edit their own XP, avatar, status, start or manager ──
+create or replace function public.guard_profile_self_update ()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- No end-user JWT (service role / SQL editor) or an admin: allowed.
+  if auth.uid() is null or public.is_admin() then
+    return new;
+  end if;
+  if new.journey_points is distinct from old.journey_points
+     or new.avatar_url is distinct from old.avatar_url
+     or new.status is distinct from old.status
+     or new.started_at is distinct from old.started_at
+     or new.manager_id is distinct from old.manager_id then
+    raise exception 'That profile field can only be changed by the app or an admin'
+      using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_guard_self_update on public.profiles;
+create trigger profiles_guard_self_update
+  before update on public.profiles
+  for each row execute function public.guard_profile_self_update ();

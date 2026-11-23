@@ -83,7 +83,10 @@ export async function acceptInvite(
       .maybeSingle();
     isAdmin = profile?.is_admin ?? false;
     // Admins are already active; only stamp the journey start for real starters.
-    await supabase
+    // status/started_at aren't user-writable (migration 0013), so the server sets
+    // them for the user whose session was just verified above.
+    const { createSupabaseAdminClient } = await import("@/lib/supabase/admin");
+    await createSupabaseAdminClient()
       .from("profiles")
       .update(
         isAdmin

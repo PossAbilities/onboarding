@@ -308,14 +308,16 @@ create policy "profiles_update_self" on public.profiles for update
 
 -- Progress / badges / eggs: owner-only (admins read via service role).
 drop policy if exists "progress_owner" on public.progress;
-create policy "progress_owner" on public.progress for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- Read-only for the owner; the app writes progress/badges/eggs with the
+-- service role after its server-side checks (see migrations/0013).
+create policy "progress_owner" on public.progress for select
+  using (auth.uid() = user_id);
 drop policy if exists "badges_owner" on public.user_badges;
-create policy "badges_owner" on public.user_badges for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "badges_owner" on public.user_badges for select
+  using (auth.uid() = user_id);
 drop policy if exists "eggs_owner" on public.easter_eggs;
-create policy "eggs_owner" on public.easter_eggs for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "eggs_owner" on public.easter_eggs for select
+  using (auth.uid() = user_id);
 
 -- Integrations: admin-only (contain API keys). Dispatcher reads via service role.
 alter table public.integrations enable row level security;
@@ -358,7 +360,8 @@ create policy "sig_admin_read" on public.document_signatures for select
 drop policy if exists "ideas_select" on public.ideas;
 create policy "ideas_select" on public.ideas for select using (auth.role() = 'authenticated');
 drop policy if exists "ideas_insert" on public.ideas;
-create policy "ideas_insert" on public.ideas for insert with check (auth.uid() = author_id);
+create policy "ideas_insert" on public.ideas for insert
+  with check (auth.uid() = author_id and votes = 1 and status = 'submitted');
 drop policy if exists "ideas_update" on public.ideas;
 create policy "ideas_update" on public.ideas for update using (public.is_admin()) with check (public.is_admin());
 
@@ -504,6 +507,13 @@ begin
     raise exception 'Not signed in' using errcode = '28000';
   end if;
 
+  -- Unknown idea, or your own idea (its starting vote is already yours).
+  if not exists (
+    select 1 from public.ideas where id = p_idea_id and author_id <> v_user
+  ) then
+    return false;
+  end if;
+
   insert into public.idea_votes (user_id, idea_id)
   values (v_user, p_idea_id)
   on conflict (user_id, idea_id) do nothing;
@@ -540,3 +550,37 @@ drop trigger if exists document_signatures_check_document on public.document_sig
 create trigger document_signatures_check_document
   before insert or update of document_id on public.document_signatures
   for each row execute function public.check_signature_document ();
+
+-- ── 5. Progress, badges and eggs: read-only for the owner ──────────────────
+revoke insert, update, delete on public.progress from anon, authenticated;
+revoke insert, update, delete on public.user_badges from anon, authenticated;
+revoke insert, update, delete on public.easter_eggs from anon, authenticated;
+
+-- ── 6. Starters can't edit their own XP, avatar, status, start or manager ──
+create or replace function public.guard_profile_self_update ()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- No end-user JWT (service role / SQL editor) or an admin: allowed.
+  if auth.uid() is null or public.is_admin() then
+    return new;
+  end if;
+  if new.journey_points is distinct from old.journey_points
+     or new.avatar_url is distinct from old.avatar_url
+     or new.status is distinct from old.status
+     or new.started_at is distinct from old.started_at
+     or new.manager_id is distinct from old.manager_id then
+    raise exception 'That profile field can only be changed by the app or an admin'
+      using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_guard_self_update on public.profiles;
+create trigger profiles_guard_self_update
+  before update on public.profiles
+  for each row execute function public.guard_profile_self_update ();
