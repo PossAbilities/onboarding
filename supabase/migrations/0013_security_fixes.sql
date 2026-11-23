@@ -15,7 +15,7 @@
 --    own login. The app writes them with the service-role key after its
 --    server-side checks (locked modules, real egg IDs, no repeat XP).
 -- 6. A starter can't change their own XP, avatar, status, start date,
---    manager, admin flag or identity through the API; the app (service role)
+--    manager, role, department, admin flag or identity through the API; the app (service role)
 --    and admins can. The self-update policy also gains a WITH CHECK.
 --
 -- Safe to run more than once.
@@ -122,7 +122,8 @@ revoke insert, update, delete on public.progress from anon, authenticated;
 revoke insert, update, delete on public.user_badges from anon, authenticated;
 revoke insert, update, delete on public.easter_eggs from anon, authenticated;
 
--- ── 6. Starters can't edit their own XP, avatar, status, start or manager ──
+-- ── 6. Starters can't edit their own XP, avatar, status, start, manager,
+--       role or department (admins and the service role can) ───────────────
 create or replace function public.guard_profile_self_update ()
 returns trigger
 language plpgsql
@@ -139,6 +140,8 @@ begin
      or new.status is distinct from old.status
      or new.started_at is distinct from old.started_at
      or new.manager_id is distinct from old.manager_id
+     or new.role_tag is distinct from old.role_tag
+     or new.department is distinct from old.department
      -- Identity and admin rights: also locked by 0011's column grants, kept
      -- here too so a database that missed 0011 is still safe.
      or new.is_admin is distinct from old.is_admin
