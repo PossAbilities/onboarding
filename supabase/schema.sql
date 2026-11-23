@@ -304,7 +304,25 @@ create policy "profiles_select" on public.profiles for select
   using (auth.uid() = id or public.is_admin());
 drop policy if exists "profiles_update_self" on public.profiles;
 create policy "profiles_update_self" on public.profiles for update
-  using (auth.uid() = id or public.is_admin());
+  using (auth.uid() = id or public.is_admin())
+  with check (auth.uid() = id or public.is_admin());
+
+-- Column lockdown (same as migrations/0011): users may update only these
+-- columns of their row. is_admin, invited_by, id and email are service-role
+-- only. The guard trigger at the end of this file narrows it further.
+revoke update on public.profiles from anon, authenticated;
+grant update (
+  full_name,
+  avatar_url,
+  role_tag,
+  department,
+  manager_id,
+  journey_points,
+  status,
+  started_at,
+  last_activity_at,
+  metadata
+) on public.profiles to authenticated;
 
 -- Progress / badges / eggs: owner-only (admins read via service role).
 drop policy if exists "progress_owner" on public.progress;
@@ -572,7 +590,13 @@ begin
      or new.avatar_url is distinct from old.avatar_url
      or new.status is distinct from old.status
      or new.started_at is distinct from old.started_at
-     or new.manager_id is distinct from old.manager_id then
+     or new.manager_id is distinct from old.manager_id
+     -- Identity and admin rights: also locked by 0011's column grants, kept
+     -- here too so a database that missed 0011 is still safe.
+     or new.is_admin is distinct from old.is_admin
+     or new.invited_by is distinct from old.invited_by
+     or new.email is distinct from old.email
+     or new.id is distinct from old.id then
     raise exception 'That profile field can only be changed by the app or an admin'
       using errcode = '42501';
   end if;

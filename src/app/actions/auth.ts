@@ -82,18 +82,26 @@ export async function acceptInvite(
       .eq("id", user.id)
       .maybeSingle();
     isAdmin = profile?.is_admin ?? false;
-    // Admins are already active; only stamp the journey start for real starters.
-    // status/started_at aren't user-writable (migration 0013), so the server sets
-    // them for the user whose session was just verified above.
+    // status/started_at aren't user-writable (migration 0013), so the server
+    // sets them, and only once: when a pending invite is first accepted. Re-running
+    // this action can't reset a completed starter or restart their start date.
     const { createSupabaseAdminClient } = await import("@/lib/supabase/admin");
-    await createSupabaseAdminClient()
+    const admin = createSupabaseAdminClient();
+    const { data: current } = await admin
       .from("profiles")
-      .update(
-        isAdmin
-          ? { status: "active" }
-          : { status: "active", started_at: new Date().toISOString() },
-      )
-      .eq("id", user.id);
+      .select("status")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (current?.status === "invited") {
+      // Admins are already active; only stamp the journey start for real starters.
+      const patch: { status: string; started_at?: string } = { status: "active" };
+      if (!isAdmin) patch.started_at = new Date().toISOString();
+      await admin
+        .from("profiles")
+        .update(patch)
+        .eq("id", user.id)
+        .eq("status", "invited");
+    }
   }
   redirect(isAdmin ? "/admin" : "/home");
 }

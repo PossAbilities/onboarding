@@ -149,7 +149,9 @@ and videos/testimonials in **Content Library**.
 **Security fixes (Nov 2026):** existing databases also need
 `supabase/migrations/0013_security_fixes.sql` — one BIG Idea vote per person, ideas
 editable by admins only, and signatures must match a real document. Until it's run,
-voting shows "couldn't be saved" rather than allowing unlimited votes.
+voting shows "couldn't be saved" rather than allowing unlimited votes. Make sure
+`0011_admin_users.sql` has also been applied (it stops starters making themselves admin);
+0013 adds the same protection again as a backstop.
 Candidate data (DOB, NI number, etc.) is readable only by the candidate and admins, and is
 written only through the app's server actions.
 

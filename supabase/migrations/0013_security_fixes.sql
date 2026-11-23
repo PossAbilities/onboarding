@@ -14,8 +14,9 @@
 -- 5. Journey progress, badges and easter eggs are read-only for a starter's
 --    own login. The app writes them with the service-role key after its
 --    server-side checks (locked modules, real egg IDs, no repeat XP).
--- 6. A starter can't change their own XP, avatar, status, start date or
---    manager through the API; the app (service role) and admins can.
+-- 6. A starter can't change their own XP, avatar, status, start date,
+--    manager, admin flag or identity through the API; the app (service role)
+--    and admins can. The self-update policy also gains a WITH CHECK.
 --
 -- Safe to run more than once.
 
@@ -137,13 +138,24 @@ begin
      or new.avatar_url is distinct from old.avatar_url
      or new.status is distinct from old.status
      or new.started_at is distinct from old.started_at
-     or new.manager_id is distinct from old.manager_id then
+     or new.manager_id is distinct from old.manager_id
+     -- Identity and admin rights: also locked by 0011's column grants, kept
+     -- here too so a database that missed 0011 is still safe.
+     or new.is_admin is distinct from old.is_admin
+     or new.invited_by is distinct from old.invited_by
+     or new.email is distinct from old.email
+     or new.id is distinct from old.id then
     raise exception 'That profile field can only be changed by the app or an admin'
       using errcode = '42501';
   end if;
   return new;
 end;
 $$;
+
+drop policy if exists "profiles_update_self" on public.profiles;
+create policy "profiles_update_self" on public.profiles for update
+  using (auth.uid() = id or public.is_admin())
+  with check (auth.uid() = id or public.is_admin());
 
 drop trigger if exists profiles_guard_self_update on public.profiles;
 create trigger profiles_guard_self_update
