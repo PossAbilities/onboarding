@@ -8,6 +8,8 @@ import { DEMO_COOKIE } from "@/lib/auth";
 
 const COOKIE_OPTS = {
   httpOnly: true,
+  // HTTPS-only in production. Browsers treat localhost as secure, so local dev still works.
+  secure: process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
   path: "/",
   maxAge: 60 * 60 * 24 * 7,

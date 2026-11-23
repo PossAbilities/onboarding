@@ -4,10 +4,14 @@ import { ModuleVideo } from "../ModuleVideo";
 import { Icon } from "@/components/ui/Icon";
 import { Chip } from "@/components/ui/Chip";
 import { getManagerById } from "@/lib/data";
+import { isSafeLinkUrl } from "@/lib/safe-url";
 import type { ModuleViewProps } from "../types";
 
 export async function ManagerModule(props: ModuleViewProps) {
   const manager = await getManagerById(props.profile.managerId);
+  // Only use the stored booking link if it's a real web link (never javascript:).
+  const calendarUrl =
+    manager?.calendarUrl && isSafeLinkUrl(manager.calendarUrl) ? manager.calendarUrl : null;
 
   return (
     <ModuleScaffold
@@ -56,12 +60,12 @@ export async function ManagerModule(props: ModuleViewProps) {
           <div className="mt-5 flex flex-wrap gap-3">
             <a
               href={
-                manager.calendarUrl ??
+                calendarUrl ??
                 `mailto:?subject=${encodeURIComponent(
                   `Intro catch-up with ${manager.name}`,
                 )}`
               }
-              target={manager.calendarUrl ? "_blank" : undefined}
+              target={calendarUrl ? "_blank" : undefined}
               rel="noreferrer"
               className="btn-3d inline-flex items-center gap-2 rounded-xl bg-secondary px-5 py-3 text-sm font-bold text-on-secondary"
             >

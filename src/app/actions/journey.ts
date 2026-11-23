@@ -21,6 +21,8 @@ import {
   voteIdea,
 } from "@/lib/data";
 import { dispatchEvent } from "@/lib/integrations";
+import { isOwnProfilePhotoUrl } from "@/lib/profile-photo";
+import { isSafeLinkUrl } from "@/lib/safe-url";
 
 export async function completeModuleAction(moduleId: string, score?: number) {
   const profile = await requireProfile();
@@ -84,6 +86,11 @@ export async function saveProfilePhotoAction(
 ) {
   const profile = await requireProfile();
   if (!url) return { ok: false as const, message: "No photo provided." };
+  // Only photos uploaded through uploadProfilePhotoAction are accepted, so a
+  // starter can't point their avatar at an outside tracking URL.
+  if (!isOwnProfilePhotoUrl(url, profile.id)) {
+    return { ok: false as const, message: "Please upload your photo using the camera or file picker." };
+  }
   await updateMyAvatar(profile, url);
 
   const nameOnBadge = (details.nameOnBadge ?? profile.fullName).trim();
@@ -127,7 +134,10 @@ export async function signDocumentAction(
   if (!signedName.trim()) {
     return { ok: false as const, message: "Please type your full name to sign." };
   }
-  await signDocument(profile, documentId, signedName.trim(), signatureData);
+  const signed = await signDocument(profile, documentId, signedName.trim(), signatureData);
+  if (!signed) {
+    return { ok: false as const, message: "That document couldn't be found." };
+  }
   revalidatePath("/documents");
 
   const doc = (await getDocuments()).find((d) => d.id === documentId);
@@ -152,6 +162,9 @@ export async function addCredentialAction(input: {
   const profile = await requireProfile();
   if (!input.platform?.trim() || !input.secret?.trim()) {
     return { ok: false, message: "Platform and password are required." };
+  }
+  if (input.url?.trim() && !isSafeLinkUrl(input.url.trim())) {
+    return { ok: false, message: "The login page link must start with https://." };
   }
   const res = await addCredential(profile, {
     platform: input.platform.trim(),
@@ -213,7 +226,9 @@ export async function submitIdeaAction(input: {
 }
 
 export async function voteIdeaAction(ideaId: string) {
-  await requireProfile();
-  await voteIdea(ideaId);
+  // The vote is tied to the signed-in user, so each person counts once.
+  const profile = await requireProfile();
+  const result = await voteIdea(profile, ideaId);
   revalidatePath("/modules/big-idea");
+  return { result };
 }

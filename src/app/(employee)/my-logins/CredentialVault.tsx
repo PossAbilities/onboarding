@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
+import { isSafeLinkUrl } from "@/lib/safe-url";
 import { Chip } from "@/components/ui/Chip";
 import { clsx } from "@/lib/cn";
 import {
@@ -180,7 +181,7 @@ export function CredentialVault({ items }: { items: Credential[] }) {
                       {left === 0 ? "expires today" : `${left} day${left === 1 ? "" : "s"} left`}
                     </Chip>
                   )}
-                  {c.url && (
+                  {c.url && isSafeLinkUrl(c.url) && (
                     <a
                       href={c.url}
                       target="_blank"

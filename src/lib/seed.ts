@@ -30,6 +30,20 @@ import {
 
 // A reliable, small, public-domain sample video for native playback.
 // Swap for your real welcome video in the admin Content Editor.
+/**
+ * Every hidden egg in the module views (<EasterEgg eggId="…">). The server only
+ * counts these, so the Navigator badge can't be earned with made-up IDs.
+ * Add new eggs here as well as in the component.
+ */
+export const EASTER_EGG_IDS: ReadonlySet<string> = new Set([
+  "egg-welcome",
+  "egg-directors",
+  "egg-culture",
+  "egg-benefits",
+  "egg-bigidea",
+  "egg-pets",
+]);
+
 export const SAMPLE_VIDEO =
   "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4";
 const SAMPLE_VIDEO_2 =

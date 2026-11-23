@@ -105,9 +105,30 @@ export function sampleDataFor(value: string): Record<string, string> {
   return Object.fromEntries((def?.fields ?? []).map((f) => [f.key, f.sample]));
 }
 
-/** Replace {{token}} placeholders in any string with values (unknown → ""). */
-export function renderTokens(input: string, data: Record<string, string>): string {
+/**
+ * Replace {{token}} placeholders in any string with values (unknown → "").
+ * Pass `escape` to encode each value for where it lands (URL, JSON…), so
+ * employee-supplied text can't change the shape of the output.
+ */
+export function renderTokens(
+  input: string,
+  data: Record<string, string>,
+  escape: (value: string) => string = (v) => v,
+): string {
   return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, k: string) =>
-    k in data ? data[k] : "",
+    Object.hasOwn(data, k) ? escape(String(data[k])) : "",
   );
+}
+
+/** Escape a value for use inside a JSON string literal (no surrounding quotes). */
+export function jsonStringEscape(value: string): string {
+  return JSON.stringify(value).slice(1, -1);
+}
+
+/** Header names that would touch the object prototype or aren't valid HTTP tokens. */
+export function isReservedHeaderKey(key: string): boolean {
+  const k = key.trim();
+  if (!k) return false; // blank rows are ignored
+  if (["__proto__", "constructor", "prototype"].includes(k.toLowerCase())) return true;
+  return !/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(k);
 }

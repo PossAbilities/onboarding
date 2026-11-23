@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { IdBadge } from "@/components/ui/IdBadge";
 import { ImageCropper } from "./ImageCropper";
 import { clsx } from "@/lib/cn";
-import { uploadMediaAction } from "@/app/actions/media";
+import { uploadProfilePhotoAction } from "@/app/actions/media";
 import { saveProfilePhotoAction } from "@/app/actions/journey";
 
 const CHECKS = [
@@ -135,7 +135,7 @@ export function PhotoCapture({
     setError(null);
     const fd = new FormData();
     fd.append("file", dataUrlToFile(photo, "profile-photo.jpg"));
-    const up = await uploadMediaAction(fd);
+    const up = await uploadProfilePhotoAction(fd);
     if (!("url" in up)) {
       setSaving(false);
       setError(up.error);

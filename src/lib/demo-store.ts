@@ -96,7 +96,8 @@ interface DemoState {
   roles: string[];
   departments: string[];
   notifications: AppNotification[]; // the demo employee's notifications
-  credentials: Credential[]; // the demo employee's saved logins (plain in demo)
+  credentials: (Credential & { ownerId: string })[]; // saved logins, tagged with their owner (plain in demo)
+  ideaVotes: string[]; // "userId:ideaId" — one vote per person per idea
   videos: StaffVideo[];
   testimonials: Testimonial[];
   // Recruitment / pre-employment onboarding, keyed by user id.
@@ -186,6 +187,7 @@ function seedState(): DemoState {
       },
     ],
     credentials: [],
+    ideaVotes: [],
     videos: VIDEOS.map((v) => ({ ...v })),
     testimonials: TESTIMONIALS.map((t) => ({ ...t })),
     candidateRecords: Object.fromEntries(

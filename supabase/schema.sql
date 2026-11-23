@@ -253,11 +253,8 @@ create table if not exists public.app_settings (
   updated_at timestamptz default now()
 );
 
--- ── Vote increment helper ───────────────────────────────────────────────────
-create or replace function public.increment_idea_votes (idea_id uuid)
-returns void language sql as $$
-  update public.ideas set votes = votes + 1 where id = idea_id;
-$$;
+-- (Idea voting — one vote per person — is set up at the end of this file:
+--  idea_votes + vote_for_idea(). See migrations/0013_security_fixes.sql.)
 
 -- ── Auto-create a profile when a user accepts their invite / signs up ───────
 create or replace function public.handle_new_user ()
@@ -356,13 +353,14 @@ drop policy if exists "sig_admin_read" on public.document_signatures;
 create policy "sig_admin_read" on public.document_signatures for select
   using (public.is_admin());
 
--- Ideas: everyone signed-in can read; authors can insert; anyone can vote (update votes).
+-- Ideas: everyone signed-in can read; authors can insert; only admins can update.
+-- Votes go through vote_for_idea() (security definer), not direct updates.
 drop policy if exists "ideas_select" on public.ideas;
 create policy "ideas_select" on public.ideas for select using (auth.role() = 'authenticated');
 drop policy if exists "ideas_insert" on public.ideas;
 create policy "ideas_insert" on public.ideas for insert with check (auth.uid() = author_id);
 drop policy if exists "ideas_update" on public.ideas;
-create policy "ideas_update" on public.ideas for update using (auth.role() = 'authenticated');
+create policy "ideas_update" on public.ideas for update using (public.is_admin()) with check (public.is_admin());
 
 -- Content tables: any signed-in user can READ; only admins can WRITE.
 -- (The cron/invite paths use the service-role key, which bypasses RLS.)
@@ -473,3 +471,72 @@ begin
     execute format('create policy "%s_write" on public.%I for all using (public.is_admin()) with check (public.is_admin())', t, t);
   end loop;
 end $$;
+
+-- ════ Security fixes (Strix, Nov 2026) — mirrors migrations/0013 ════
+-- ── 1. Per-user vote deduplication ─────────────────────────────────────────
+create table if not exists public.idea_votes (
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  idea_id uuid not null references public.ideas (id) on delete cascade,
+  voted_at timestamptz not null default now(),
+  primary key (user_id, idea_id)
+);
+
+alter table public.idea_votes enable row level security;
+
+-- Starters can see their own votes; all writes go through vote_for_idea().
+drop policy if exists "idea_votes_select_own" on public.idea_votes;
+create policy "idea_votes_select_own" on public.idea_votes
+  for select using (auth.uid() = user_id);
+
+grant select on public.idea_votes to authenticated;
+grant select, insert, update, delete on public.idea_votes to service_role;
+
+create or replace function public.vote_for_idea (p_idea_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+begin
+  if v_user is null then
+    raise exception 'Not signed in' using errcode = '28000';
+  end if;
+
+  insert into public.idea_votes (user_id, idea_id)
+  values (v_user, p_idea_id)
+  on conflict (user_id, idea_id) do nothing;
+
+  if not found then
+    return false; -- already voted
+  end if;
+
+  update public.ideas set votes = votes + 1 where id = p_idea_id;
+  return true;
+end;
+$$;
+
+revoke all on function public.vote_for_idea (uuid) from public, anon;
+grant execute on function public.vote_for_idea (uuid) to authenticated, service_role;
+
+drop function if exists public.increment_idea_votes (uuid);
+
+-- ── 3. Signatures must reference an existing document ──────────────────────
+create or replace function public.check_signature_document ()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from public.documents where id = new.document_id) then
+    raise exception 'Unknown document %', new.document_id using errcode = '23503';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists document_signatures_check_document on public.document_signatures;
+create trigger document_signatures_check_document
+  before insert or update of document_id on public.document_signatures
+  for each row execute function public.check_signature_document ();
